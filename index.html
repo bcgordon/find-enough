@@ -142,6 +142,19 @@
   .mood-pill.selected { background:var(--purple-light); border-color:var(--purple); color:var(--purple); }
   .empty-state { text-align:center; padding:30px 16px; }
   .empty-text { font-size:14px; color:var(--text3); line-height:1.6; }
+  .emoji-picker-overlay { position:fixed; inset:0; background:rgba(42,37,32,0.4); z-index:300; display:flex; align-items:flex-end; justify-content:center; }
+  .emoji-picker-sheet { background:var(--bg); border-radius:24px 24px 0 0; padding:16px 0 0; width:100%; max-width:430px; max-height:70vh; display:flex; flex-direction:column; padding-bottom:var(--safe-bottom); }
+  .emoji-picker-header { padding:0 16px 10px; display:flex; align-items:center; gap:8px; }
+  .emoji-search { flex:1; background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:8px 12px; font-size:14px; font-family:'DM Sans',sans-serif; color:var(--text); outline:none; }
+  .emoji-search:focus { border-color:var(--purple); }
+  .emoji-picker-close { width:32px; height:32px; border-radius:50%; background:var(--bg2); border:none; font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .emoji-cats { display:flex; gap:4px; padding:0 16px 10px; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+  .emoji-cats::-webkit-scrollbar { display:none; }
+  .emoji-cat-btn { padding:5px 12px; border-radius:20px; border:1px solid var(--border); background:var(--bg2); font-size:12px; white-space:nowrap; cursor:pointer; color:var(--text2); flex-shrink:0; }
+  .emoji-cat-btn.active { background:var(--text); color:var(--bg); border-color:var(--text); }
+  .emoji-grid { display:grid; grid-template-columns:repeat(8,1fr); gap:2px; padding:4px 12px 16px; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  .emoji-cell { font-size:28px; text-align:center; padding:6px 2px; border-radius:10px; cursor:pointer; transition:background 0.1s; }
+  .emoji-cell:active { background:var(--bg2); }
 </style>
 </head>
 <body>
@@ -234,7 +247,8 @@
     <div class="add-form">
       <div class="add-form-title">Add an activity</div>
       <div class="form-row">
-        <input class="form-input emoji-input" id="new-emoji" maxlength="2" placeholder="🌟">
+        <button class="form-input emoji-input" id="new-emoji-btn" onclick="openEmojiPicker()" style="cursor:pointer;font-size:26px;display:flex;align-items:center;justify-content:center;" title="Choose emoji">🌟</button>
+        <input type="hidden" id="new-emoji" value="🌟">
         <input class="form-input" id="new-name" placeholder="Activity name" maxlength="30">
       </div>
       <div class="color-row" id="color-picker"></div>
@@ -252,6 +266,16 @@
 </nav>
 
 <div class="toast" id="toast"></div>
+<div class="emoji-picker-overlay" id="emoji-picker-overlay" style="display:none" onclick="closeEmojiPickerOutside(event)">
+  <div class="emoji-picker-sheet">
+    <div class="emoji-picker-header">
+      <input class="emoji-search" id="emoji-search" placeholder="Search emoji…" oninput="filterEmoji(this.value)">
+      <button class="emoji-picker-close" onclick="closeEmojiPicker()">✕</button>
+    </div>
+    <div class="emoji-cats" id="emoji-cats"></div>
+    <div class="emoji-grid" id="emoji-grid"></div>
+  </div>
+</div>
 <div class="modal-overlay" id="edit-modal" style="display:none" onclick="closeEditModal(event)">
   <div class="modal-sheet">
     <div class="modal-title" id="edit-modal-title"></div>
@@ -629,6 +653,78 @@ function deleteEditSession() {
 
 function closeEditModal(e) {
   if (e.target.id === 'edit-modal') document.getElementById('edit-modal').style.display = 'none';
+}
+
+// ── EMOJI PICKER ─────────────────────────────────────────────────────────────
+const EMOJI_CATS = [
+  { label: '⭐ Top picks', emojis: ['🎹','📖','🎮','📺','🧶','🎨','🎸','🎯','🏃','🧘','🍳','🌱','✍️','🎤','🎬','📷','🎲','🧩','🚴','🏊','⚽','🎾','🏋️','🧗','🎻','🥁','🪗','🎺','🪕','🎷'] },
+  { label: '🎨 Arts', emojis: ['🎨','✏️','🖌️','📝','✍️','📚','📖','📷','🎬','🎤','🎵','🎶','🎹','🎸','🎺','🎷','🥁','🪗','🎻','🪕','🎭','🎪','🖼️','🗿','📸'] },
+  { label: '🏃 Sport', emojis: ['🏃','🚴','🏊','🧘','🏋️','🧗','⚽','🏀','🏈','⚾','🎾','🏐','🏉','🎱','🏓','🏸','🥊','🥋','⛷️','🏂','🪂','🤸','🚵','🤾','🧜','🤼','🤺','🏇','🛹','🛼'] },
+  { label: '🌿 Nature', emojis: ['🌱','🌿','🍃','🌲','🌳','🌴','🌵','🌾','🍀','🌺','🌸','🌼','🌻','🌞','🌙','⭐','🌊','🏔️','🌋','🦋','🐝','🌈','🍄','🪴','🌍'] },
+  { label: '🍳 Food', emojis: ['🍳','🥘','🍲','🥗','🍱','🥐','🍞','🧁','🎂','🍰','🍪','🫖','☕','🍵','🧃','🥤','🍷','🍺','🧉','🫙','🥄','🔪','🍽️','🧑‍🍳','🛒'] },
+  { label: '💻 Tech', emojis: ['💻','📱','🖥️','⌨️','🖱️','🎮','🕹️','📡','🔭','🔬','🤖','⚙️','🔧','🔩','💡','🔋','📡','🖨️','📠','📺','📻','📼','💾','💿','📀'] },
+  { label: '🏠 Home', emojis: ['🏠','🛋️','🪴','🛁','🚿','🪥','🧹','🧺','🪣','🧴','🕯️','🪟','🚪','🧸','🪆','🎀','🧵','🧶','🪡','🪢','🛏️','🪑','🚽','🧼','🫧'] },
+  { label: '🧠 Mind', emojis: ['🧠','📿','🙏','🧘','💭','💡','📝','🗒️','📓','📔','📒','📕','📗','📘','📙','📚','🔍','🔎','💬','🗣️','👁️','✨','🌟','💫','🎯'] },
+];
+
+let _currentCat = 0;
+let _filteredEmojis = null;
+
+function openEmojiPicker() {
+  _filteredEmojis = null;
+  document.getElementById('emoji-search').value = '';
+  renderEmojiCats();
+  renderEmojiGrid();
+  document.getElementById('emoji-picker-overlay').style.display = 'flex';
+  setTimeout(() => document.getElementById('emoji-search').focus(), 100);
+}
+
+function closeEmojiPicker() {
+  document.getElementById('emoji-picker-overlay').style.display = 'none';
+}
+
+function closeEmojiPickerOutside(e) {
+  if (e.target.id === 'emoji-picker-overlay') closeEmojiPicker();
+}
+
+function renderEmojiCats() {
+  document.getElementById('emoji-cats').innerHTML = EMOJI_CATS.map((c,i) =>
+    `<button class="emoji-cat-btn ${i===_currentCat?'active':''}" onclick="selectEmojiCat(${i})">${c.label}</button>`
+  ).join('');
+}
+
+function selectEmojiCat(i) {
+  _currentCat = i;
+  _filteredEmojis = null;
+  document.getElementById('emoji-search').value = '';
+  renderEmojiCats();
+  renderEmojiGrid();
+}
+
+function filterEmoji(query) {
+  if (!query.trim()) {
+    _filteredEmojis = null;
+    renderEmojiCats();
+    renderEmojiGrid();
+    return;
+  }
+  // Search across all categories
+  const all = EMOJI_CATS.flatMap(c => c.emojis);
+  _filteredEmojis = all;
+  renderEmojiGrid();
+}
+
+function renderEmojiGrid() {
+  const emojis = _filteredEmojis !== null ? _filteredEmojis : EMOJI_CATS[_currentCat].emojis;
+  document.getElementById('emoji-grid').innerHTML = emojis.map(e =>
+    `<div class="emoji-cell" onclick="selectEmoji('${e}')">${e}</div>`
+  ).join('');
+}
+
+function selectEmoji(emoji) {
+  document.getElementById('new-emoji').value = emoji;
+  document.getElementById('new-emoji-btn').textContent = emoji;
+  closeEmojiPicker();
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
