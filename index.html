@@ -9,7 +9,7 @@
 <title>Find Enough</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
   :root {
     --bg: #F7F4EF; --bg2: #EDE9E2; --bg3: #E2DDD5;
@@ -604,7 +604,19 @@ async function retryInit() {
   document.getElementById('loading-retry').style.display = 'none';
   document.getElementById('loading-screen').style.display = 'flex';
   _appStarted = false;
-  await bootApp();
+  await // Wait for supabase global to be available before booting
+function waitForSupabase(attempts) {
+  if (typeof supabase !== 'undefined' && supabase.createClient) {
+    bootApp();
+  } else if (attempts > 0) {
+    setTimeout(function(){ waitForSupabase(attempts - 1); }, 200);
+  } else {
+    document.getElementById('loading-text').textContent = 'Network error — check your connection.';
+    document.getElementById('loading-spinner').style.display = 'none';
+    document.getElementById('loading-retry').style.display = 'block';
+  }
+}
+waitForSupabase(25);
 }
 
 async function bootApp() {
@@ -646,7 +658,19 @@ sb.auth.onAuthStateChange(async(event, session) => {
   }
 });
 
-bootApp();
+// Wait for supabase global to be available before booting
+function waitForSupabase(attempts) {
+  if (typeof supabase !== 'undefined' && supabase.createClient) {
+    bootApp();
+  } else if (attempts > 0) {
+    setTimeout(function(){ waitForSupabase(attempts - 1); }, 200);
+  } else {
+    document.getElementById('loading-text').textContent = 'Network error — check your connection.';
+    document.getElementById('loading-spinner').style.display = 'none';
+    document.getElementById('loading-retry').style.display = 'block';
+  }
+}
+waitForSupabase(25);
 </script>
 </body>
 </html>
