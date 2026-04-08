@@ -172,8 +172,9 @@
 <body>
 
 <div id="loading-screen" class="loading-screen">
-  <div class="spinner"></div>
-  <div class="loading-text">loading…</div>
+  <div class="spinner" id="loading-spinner"></div>
+  <div class="loading-text" id="loading-text">loading…</div>
+  <button id="loading-retry" onclick="retryInit()" style="display:none;margin-top:16px;background:var(--text);color:var(--bg);border:none;border-radius:12px;padding:10px 24px;font-size:14px;font-family:'DM Sans',sans-serif;cursor:pointer;">Tap to retry</button>
 </div>
 
 <div id="auth-screen" class="auth-screen" style="display:none">
@@ -311,7 +312,8 @@
 const { createClient } = supabase;
 const sb = createClient(
   'https://wxsefbilwilpzpjoynds.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind4c2VmYmlsd2lscHpwam95bmRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2NTY1NzUsImV4cCI6MjA5MTIzMjU3NX0.X6wYcI6IjlJNCJUEMGpOoxy1UX796PBro7_Kj7DtDVA'
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind4c2VmYmlsd2lscHpwam95bmRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2NTY1NzUsImV4cCI6MjA5MTIzMjU3NX0.X6wYcI6IjlJNCJUEMGpOoxy1UX796PBro7_Kj7DtDVA',
+  { auth: { persistSession: true, detectSessionInUrl: false, storage: window.localStorage } }
 );
 
 const COLORS = [
@@ -586,17 +588,65 @@ async function initApp(user){
   document.getElementById('app').classList.add('ready');
   showScreen('today');
 }
-sb.auth.onAuthStateChange(async(event,session)=>{
-  if(session?.user){
-    document.getElementById('auth-screen').style.display='none';
-    document.getElementById('loading-screen').style.display='flex';
+// iOS-safe startup: use getSession() first, fall back to onAuthStateChange
+let _appStarted = false;
+let _initTimeout = null;
+
+function showLoadingError() {
+  document.getElementById('loading-spinner').style.display = 'none';
+  document.getElementById('loading-text').textContent = 'Something went wrong.';
+  document.getElementById('loading-retry').style.display = 'block';
+}
+
+async function retryInit() {
+  document.getElementById('loading-spinner').style.display = 'block';
+  document.getElementById('loading-text').textContent = 'loading…';
+  document.getElementById('loading-retry').style.display = 'none';
+  document.getElementById('loading-screen').style.display = 'flex';
+  _appStarted = false;
+  await bootApp();
+}
+
+async function bootApp() {
+  // Hard timeout — if nothing happens in 8s, show retry
+  _initTimeout = setTimeout(() => {
+    if (!_appStarted) showLoadingError();
+  }, 8000);
+
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session?.user) {
+      _appStarted = true;
+      clearTimeout(_initTimeout);
+      await initApp(session.user);
+    } else {
+      _appStarted = true;
+      clearTimeout(_initTimeout);
+      document.getElementById('loading-screen').style.display = 'none';
+      document.getElementById('auth-screen').style.display = 'flex';
+    }
+  } catch(e) {
+    clearTimeout(_initTimeout);
+    showLoadingError();
+  }
+}
+
+// Also handle sign-in / sign-out events after initial boot
+sb.auth.onAuthStateChange(async(event, session) => {
+  if (event === 'SIGNED_IN' && session?.user && !_appStarted) {
+    _appStarted = true;
+    clearTimeout(_initTimeout);
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('loading-screen').style.display = 'flex';
     await initApp(session.user);
-  } else {
-    document.getElementById('loading-screen').style.display='none';
+  } else if (event === 'SIGNED_OUT') {
+    currentUser = null; activities = []; todaySessions = []; allSessions = [];
     document.getElementById('app').classList.remove('ready');
-    document.getElementById('auth-screen').style.display='flex';
+    document.getElementById('auth-screen').style.display = 'flex';
   }
 });
+
+bootApp();
 </script>
 </body>
 </html>
