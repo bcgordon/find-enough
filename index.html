@@ -620,26 +620,22 @@ waitForSupabase(25);
 }
 
 async function bootApp() {
-  // Hard timeout — if nothing happens in 8s, show retry
-  _initTimeout = setTimeout(() => {
-    if (!_appStarted) showLoadingError();
-  }, 8000);
-
   try {
-    const { data: { session } } = await sb.auth.getSession();
-    if (session?.user) {
-      _appStarted = true;
-      clearTimeout(_initTimeout);
+    const session = await Promise.race([
+      sb.auth.getSession().then(r => r.data.session),
+      new Promise(resolve => setTimeout(() => resolve(null), 5000))
+    ]);
+    _appStarted = true;
+    if (session && session.user) {
       await initApp(session.user);
     } else {
-      _appStarted = true;
-      clearTimeout(_initTimeout);
       document.getElementById('loading-screen').style.display = 'none';
       document.getElementById('auth-screen').style.display = 'flex';
     }
   } catch(e) {
-    clearTimeout(_initTimeout);
-    showLoadingError();
+    _appStarted = true;
+    document.getElementById('loading-screen').style.display = 'none';
+    document.getElementById('auth-screen').style.display = 'flex';
   }
 }
 
