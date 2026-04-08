@@ -126,6 +126,20 @@
 
   .toast { position:fixed; bottom:calc(var(--safe-bottom) + 90px); left:50%; transform:translateX(-50%) translateY(20px); background:var(--text); color:var(--bg); padding:10px 20px; border-radius:20px; font-size:13px; opacity:0; transition:all 0.3s; pointer-events:none; z-index:200; white-space:nowrap; }
   .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+  .modal-overlay { position:fixed; inset:0; background:rgba(42,37,32,0.4); z-index:300; display:flex; align-items:flex-end; justify-content:center; padding-bottom:var(--safe-bottom); }
+  .modal-sheet { background:var(--bg); border-radius:24px 24px 0 0; padding:24px 20px; width:100%; max-width:430px; }
+  .modal-title { font-family:'DM Serif Display',serif; font-size:20px; margin-bottom:4px; }
+  .modal-meta { font-size:13px; color:var(--text3); margin-bottom:20px; }
+  .modal-row { display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid var(--border); }
+  .modal-row:last-of-type { border-bottom:none; }
+  .modal-label { font-size:14px; color:var(--text2); }
+  .modal-btns { display:flex; gap:8px; }
+  .modal-close { width:100%; background:var(--bg2); color:var(--text); border:none; border-radius:14px; padding:14px; font-size:15px; font-weight:500; font-family:'DM Sans',sans-serif; cursor:pointer; margin-top:16px; }
+  .modal-delete { width:100%; background:var(--rose-light); color:var(--rose); border:1px solid rgba(184,92,110,0.25); border-radius:14px; padding:12px; font-size:14px; font-family:'DM Sans',sans-serif; cursor:pointer; margin-top:8px; }
+  .toggle-btn { padding:6px 14px; border-radius:20px; font-size:12px; font-weight:500; border:1px solid var(--border); background:var(--bg2); color:var(--text2); cursor:pointer; }
+  .toggle-btn.on { background:var(--green); color:#fff; border-color:var(--green); }
+  .mood-pill { padding:5px 10px; border-radius:20px; font-size:12px; border:1px solid var(--border); background:var(--bg2); cursor:pointer; }
+  .mood-pill.selected { background:var(--purple-light); border-color:var(--purple); color:var(--purple); }
   .empty-state { text-align:center; padding:30px 16px; }
   .empty-text { font-size:14px; color:var(--text3); line-height:1.6; }
 </style>
@@ -238,6 +252,22 @@
 </nav>
 
 <div class="toast" id="toast"></div>
+<div class="modal-overlay" id="edit-modal" style="display:none" onclick="closeEditModal(event)">
+  <div class="modal-sheet">
+    <div class="modal-title" id="edit-modal-title"></div>
+    <div class="modal-meta" id="edit-modal-meta"></div>
+    <div class="modal-row">
+      <span class="modal-label">Marked as enough</span>
+      <button class="toggle-btn" id="edit-enough-btn" onclick="toggleEditEnough()"></button>
+    </div>
+    <div class="modal-row">
+      <span class="modal-label">How it felt</span>
+      <div class="modal-btns" id="edit-mood-btns"></div>
+    </div>
+    <button class="modal-close" onclick="saveEditSession()">Save changes</button>
+    <button class="modal-delete" onclick="deleteEditSession()">Delete this entry</button>
+  </div>
+</div>
 
 <script>
 // ── STORAGE ──────────────────────────────────────────────────────────────────
@@ -473,7 +503,7 @@ function renderInsights() {
         const act=d.activities.find(a=>a.id===s.activityId);if(!act)return'';
         const me={flow:'😌',good:'🙂',meh:'😶',guilt:'😬'}[s.mood]||'';
         const dt=new Date(s.ts);
-        return`<div class="log-item"><div class="log-emoji">${act.emoji}</div><div class="log-body"><div class="log-name">${act.name} ${s.enough?'🌿':''}</div><div class="log-meta">${dt.toLocaleDateString('en-US',{month:'short',day:'numeric'})} · ${fmtMins(s.duration)}</div></div><div>${me}</div></div>`;
+        return`<div class="log-item" onclick="openEditModal('${s.id}')" style="cursor:pointer"><div class="log-emoji">${act.emoji}</div><div class="log-body"><div class="log-name">${act.name} ${s.enough?'🌿':''}</div><div class="log-meta">${dt.toLocaleDateString('en-US',{month:'short',day:'numeric'})} · ${fmtMins(s.duration)}</div></div><div style="display:flex;align-items:center;gap:6px">${me} <span style="font-size:11px;color:var(--text3)">edit</span></div></div>`;
       }).join('')}
     </div>`;
 }
@@ -532,6 +562,73 @@ function moveActivity(index,dir) {
   [d.activities[index],d.activities[ni]]=[d.activities[ni],d.activities[index]];
   saveStore(d);
   renderManage();
+}
+
+// ── EDIT MODAL ───────────────────────────────────────────────────────────────
+let _editSessionId = null;
+let _editEnough = false;
+let _editMood = null;
+
+function openEditModal(sessionId) {
+  const d = getStore();
+  const s = d.sessions.find(x => x.id === sessionId);
+  if (!s) return;
+  const act = d.activities.find(a => a.id === s.activityId);
+  if (!act) return;
+  _editSessionId = sessionId;
+  _editEnough = s.enough;
+  _editMood = s.mood;
+  const dt = new Date(s.ts);
+  document.getElementById('edit-modal-title').textContent = act.emoji + ' ' + act.name;
+  document.getElementById('edit-modal-meta').textContent = dt.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}) + ' · ' + fmtMins(s.duration);
+  document.getElementById('edit-enough-btn').textContent = _editEnough ? 'Enough ✓' : 'Not enough';
+  document.getElementById('edit-enough-btn').className = 'toggle-btn' + (_editEnough ? ' on' : '');
+  renderEditMoods();
+  document.getElementById('edit-modal').style.display = 'flex';
+}
+
+function renderEditMoods() {
+  const moods = [{id:'flow',label:'😌 Flow'},{id:'good',label:'🙂 Good'},{id:'meh',label:'😶 Meh'},{id:'guilt',label:'😬 Guilt'}];
+  document.getElementById('edit-mood-btns').innerHTML = moods.map(m =>
+    `<button class="mood-pill ${_editMood===m.id?'selected':''}" onclick="setEditMood('${m.id}')">${m.label}</button>`
+  ).join('');
+}
+
+function setEditMood(mood) {
+  _editMood = _editMood === mood ? null : mood;
+  renderEditMoods();
+}
+
+function toggleEditEnough() {
+  _editEnough = !_editEnough;
+  document.getElementById('edit-enough-btn').textContent = _editEnough ? 'Enough ✓' : 'Not enough';
+  document.getElementById('edit-enough-btn').className = 'toggle-btn' + (_editEnough ? ' on' : '');
+}
+
+function saveEditSession() {
+  const d = getStore();
+  const idx = d.sessions.findIndex(s => s.id === _editSessionId);
+  if (idx === -1) return;
+  d.sessions[idx].enough = _editEnough;
+  d.sessions[idx].mood = _editMood;
+  saveStore(d);
+  document.getElementById('edit-modal').style.display = 'none';
+  showToast('Entry updated');
+  renderInsights();
+}
+
+function deleteEditSession() {
+  const d = getStore();
+  d.sessions = d.sessions.filter(s => s.id !== _editSessionId);
+  saveStore(d);
+  document.getElementById('edit-modal').style.display = 'none';
+  showToast('Entry deleted');
+  renderInsights();
+  renderToday();
+}
+
+function closeEditModal(e) {
+  if (e.target.id === 'edit-modal') document.getElementById('edit-modal').style.display = 'none';
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
