@@ -380,15 +380,24 @@ async function signOut(){
 }
 
 // DATA
+function withTimeout(promise, ms) {
+  return Promise.race([
+    promise,
+    new Promise(resolve => setTimeout(() => resolve(null), ms))
+  ]);
+}
+
 async function loadData(){
   const uid=currentUser.id;
-  const [{data:acts},{data:sess}]=await Promise.all([
-    sb.from('activities').select('*').eq('user_id',uid).order('sort_order'),
-    sb.from('sessions').select('*').eq('user_id',uid).order('created_at',{ascending:false})
+  const [actsRes, sessRes]=await Promise.all([
+    withTimeout(sb.from('activities').select('*').eq('user_id',uid).order('sort_order'), 8000),
+    withTimeout(sb.from('sessions').select('*').eq('user_id',uid).order('created_at',{ascending:false}), 8000)
   ]);
-  if(acts&&acts.length===0){
-    const {data:newActs}=await sb.from('activities').insert(DEFAULTS.map(a=>({...a,user_id:uid}))).select();
-    activities=newActs||[];
+  const acts = actsRes ? actsRes.data : null;
+  const sess = sessRes ? sessRes.data : null;
+  if(acts !== null && acts.length===0){
+    const insRes = await withTimeout(sb.from('activities').insert(DEFAULTS.map(a=>({...a,user_id:uid}))).select(), 8000);
+    activities = insRes ? (insRes.data || []) : DEFAULTS.map((a,i)=>({...a,id:'local_'+i,user_id:uid}));
   } else {activities=acts||[];}
   allSessions=sess||[];
   todaySessions=allSessions.filter(s=>s.date===todayStr());
