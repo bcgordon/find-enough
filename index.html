@@ -11,262 +11,441 @@
 <title>Find Enough</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@supabase/supabase-js@2.39.7/dist/umd/supabase.js"></script>
 <style>
   :root {
-    --bg: #F7F4EF; --bg2: #EDE9E2; --bg3: #E2DDD5;
-    --text: #2A2520; --text2: #7A7068; --text3: #A89F95;
-    --green: #3A7D5C; --green-light: #D4EDE1;
-    --amber: #C8771A; --amber-light: #FAE8CC;
-    --rose: #B85C6E; --rose-light: #F5D9E0;
-    --purple: #6B5EA8; --purple-light: #E4DFFA;
-    --border: rgba(42,37,32,0.10); --radius: 18px;
-    --safe-top: env(safe-area-inset-top,0px);
-    --safe-bottom: env(safe-area-inset-bottom,0px);
+    --bg:#F7F4EF;--bg2:#EDE9E2;--bg3:#E2DDD5;
+    --text:#2A2520;--text2:#7A7068;--text3:#A89F95;
+    --green:#3A7D5C;--green-light:#D4EDE1;
+    --amber:#C8771A;--amber-light:#FAE8CC;
+    --rose:#B85C6E;--rose-light:#F5D9E0;
+    --purple:#6B5EA8;--purple-light:#E4DFFA;
+    --border:rgba(42,37,32,0.10);--radius:18px;
+    --safe-top:env(safe-area-inset-top,0px);
+    --safe-bottom:env(safe-area-inset-bottom,0px);
   }
-  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
-  body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); min-height:100dvh; max-width:430px; margin:0 auto; overflow-x:hidden; }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100dvh;max-width:430px;margin:0 auto;overflow-x:hidden;}
 
-  .screen { display:none; flex-direction:column; min-height:100dvh; padding-top:calc(var(--safe-top) + 12px); padding-bottom:calc(var(--safe-bottom) + 80px); }
-  .screen.active { display:flex; }
-  .header { padding:16px 24px 8px; }
-  .header-row { display:flex; align-items:center; justify-content:space-between; }
-  .app-title { font-family:'DM Serif Display',serif; font-size:28px; letter-spacing:-0.5px; }
-  .app-date { font-size:13px; color:var(--text3); margin-top:2px; font-weight:300; }
-  .icon-btn { width:38px; height:38px; border-radius:12px; background:var(--bg2); border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:background 0.15s; flex-shrink:0; }
-  .icon-btn:active { background:var(--bg3); }
-  .header-btns { display:flex; gap:8px; }
-  .scroll-area { flex:1; overflow-y:auto; padding:8px 20px; -webkit-overflow-scrolling:touch; }
-  .section-heading { font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--text3); margin:20px 0 10px; }
+  /* PASSPHRASE */
+  .auth-screen{min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px;}
+  .auth-logo{font-family:'DM Serif Display',serif;font-size:36px;margin-bottom:8px;}
+  .auth-tagline{font-size:14px;color:var(--text3);margin-bottom:48px;font-weight:300;font-style:italic;}
+  .auth-card{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:24px;}
+  .auth-card-title{font-size:15px;font-weight:500;margin-bottom:6px;}
+  .auth-card-sub{font-size:13px;color:var(--text3);margin-bottom:18px;line-height:1.5;}
+  .auth-input{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-size:15px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;margin-bottom:10px;letter-spacing:0.02em;}
+  .auth-input:focus{border-color:var(--purple);}
+  .auth-btn{width:100%;background:var(--text);color:var(--bg);border:none;border-radius:14px;padding:14px;font-size:15px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;transition:opacity 0.15s;}
+  .auth-btn:active{opacity:0.8;}
+  .auth-btn:disabled{opacity:0.4;cursor:not-allowed;}
+  .auth-error{font-size:13px;color:var(--rose);margin-top:10px;text-align:center;min-height:18px;}
 
-  .balance-card { background:var(--text); color:var(--bg); border-radius:var(--radius); padding:20px; margin-bottom:16px; position:relative; overflow:hidden; }
-  .balance-card::before { content:''; position:absolute; right:-20px; top:-20px; width:120px; height:120px; border-radius:50%; background:rgba(255,255,255,0.04); }
-  .balance-label { font-size:11px; letter-spacing:0.08em; text-transform:uppercase; opacity:0.5; margin-bottom:6px; }
-  .balance-score { font-family:'DM Serif Display',serif; font-size:48px; line-height:1; }
-  .balance-desc { font-size:13px; opacity:0.6; margin-top:6px; font-weight:300; }
-  .balance-chips { display:flex; gap:6px; margin-top:14px; flex-wrap:wrap; }
-  .balance-chip { font-size:11px; padding:4px 10px; border-radius:20px; background:rgba(255,255,255,0.12); }
-  .balance-chip.done { background:rgba(58,125,92,0.5); }
+  /* LOADING */
+  .loading-screen{min-height:100dvh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;}
+  .spinner{width:28px;height:28px;border:2px solid var(--bg3);border-top-color:var(--text);border-radius:50%;animation:spin 0.7s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .loading-text{font-size:13px;color:var(--text3);}
 
-  .activity-card { background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px; margin-bottom:10px; display:flex; align-items:center; gap:14px; cursor:pointer; transition:transform 0.1s,background 0.15s; }
-  .activity-card:active { transform:scale(0.98); background:var(--bg2); }
-  .activity-card.enough { background:var(--green-light); border-color:rgba(58,125,92,0.2); }
-  .activity-icon-wrap { width:44px; height:44px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; }
-  .activity-body { flex:1; min-width:0; }
-  .activity-name { font-size:16px; font-weight:500; }
-  .activity-meta { font-size:12px; color:var(--text3); margin-top:2px; }
-  .status-badge { font-size:11px; font-weight:500; padding:4px 10px; border-radius:20px; white-space:nowrap; }
-  .status-badge.enough { background:var(--green); color:#fff; }
-  .status-badge.active { background:var(--amber-light); color:var(--amber); }
-  .status-badge.none { background:var(--bg2); color:var(--text3); }
-  .dot-row { display:flex; gap:4px; margin-top:5px; }
-  .dot { width:7px; height:7px; border-radius:50%; background:var(--bg3); }
-  .dot.on { background:var(--purple); } .dot.enough { background:var(--green); }
+  /* APP */
+  .app{display:none;}.app.ready{display:block;}
+  .screen{display:none;flex-direction:column;min-height:100dvh;padding-top:calc(var(--safe-top) + 12px);padding-bottom:calc(var(--safe-bottom) + 80px);}
+  .screen.active{display:flex;}
 
-  .bottom-nav { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:430px; background:rgba(247,244,239,0.92); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); border-top:1px solid var(--border); display:flex; padding-bottom:var(--safe-bottom); z-index:100; }
-  .nav-item { flex:1; display:flex; flex-direction:column; align-items:center; padding:10px 0 8px; cursor:pointer; gap:3px; }
-  .nav-icon { font-size:20px; } .nav-label { font-size:10px; color:var(--text3); }
-  .nav-item.active .nav-label { color:var(--text); font-weight:500; }
+  /* HEADER */
+  .header{padding:16px 24px 8px;}
+  .header-row{display:flex;align-items:center;justify-content:space-between;}
+  .app-title{font-family:'DM Serif Display',serif;font-size:28px;letter-spacing:-0.5px;}
+  .app-date{font-size:13px;color:var(--text3);margin-top:2px;font-weight:300;}
+  .icon-btn{width:38px;height:38px;border-radius:12px;background:var(--bg2);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background 0.15s;flex-shrink:0;}
+  .icon-btn:active{background:var(--bg3);}
+  .header-btns{display:flex;gap:8px;}
+  .scroll-area{flex:1;overflow-y:auto;padding:8px 20px;-webkit-overflow-scrolling:touch;}
+  .section-heading{font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--text3);margin:20px 0 10px;}
 
-  .session-back { display:flex; align-items:center; gap:8px; padding:12px 20px; cursor:pointer; }
-  .session-back-label { font-size:14px; color:var(--text2); }
-  .session-body { flex:1; display:flex; flex-direction:column; align-items:center; padding:20px; }
-  .session-icon-big { width:80px; height:80px; border-radius:24px; display:flex; align-items:center; justify-content:center; font-size:44px; margin-bottom:12px; }
-  .session-name { font-family:'DM Serif Display',serif; font-size:28px; }
-  .timer-big { font-family:'DM Serif Display',serif; font-size:56px; margin:16px 0 4px; letter-spacing:-1px; }
-  .timer-sub { font-size:13px; color:var(--text3); margin-bottom:24px; }
-  .nudge-card { width:100%; background:var(--bg2); border-radius:var(--radius); padding:16px; margin-bottom:20px; }
-  .nudge-title { font-size:13px; color:var(--text2); margin-bottom:10px; text-align:center; font-weight:300; font-style:italic; }
-  .mood-row { display:flex; gap:8px; }
-  .mood-btn { flex:1; padding:10px 4px; border-radius:12px; border:1px solid var(--border); background:var(--bg); cursor:pointer; text-align:center; transition:all 0.15s; }
-  .mood-btn.selected { border-color:var(--purple); background:var(--purple-light); }
-  .mood-emoji { font-size:20px; display:block; } .mood-label { font-size:10px; color:var(--text3); display:block; margin-top:2px; }
-  .mood-btn.selected .mood-label { color:var(--purple); }
-  .session-actions { width:100%; display:flex; flex-direction:column; gap:10px; }
-  .btn-enough { background:var(--green); color:#fff; border:none; border-radius:16px; padding:16px; font-size:16px; font-weight:500; font-family:'DM Sans',sans-serif; cursor:pointer; }
-  .btn-enough:active { opacity:0.85; }
-  .btn-remind { background:var(--bg2); color:var(--text2); border:none; border-radius:16px; padding:14px; font-size:14px; font-family:'DM Sans',sans-serif; cursor:pointer; }
-  .btn-stop { background:transparent; color:var(--rose); border:1px solid rgba(184,92,110,0.3); border-radius:16px; padding:12px; font-size:13px; font-family:'DM Sans',sans-serif; cursor:pointer; }
+  /* BALANCE CARD */
+  .balance-card{background:var(--text);color:var(--bg);border-radius:var(--radius);padding:20px;margin-bottom:16px;position:relative;overflow:hidden;}
+  .balance-card::before{content:'';position:absolute;right:-20px;top:-20px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,0.04);}
+  .balance-label{font-size:11px;letter-spacing:0.08em;text-transform:uppercase;opacity:0.5;margin-bottom:6px;}
+  .balance-score{font-family:'DM Serif Display',serif;font-size:48px;line-height:1;}
+  .balance-desc{font-size:13px;opacity:0.6;margin-top:6px;font-weight:300;}
+  .balance-chips{display:flex;gap:6px;margin-top:14px;flex-wrap:wrap;}
+  .balance-chip{font-size:11px;padding:4px 10px;border-radius:20px;background:rgba(255,255,255,0.12);}
+  .balance-chip.done{background:rgba(58,125,92,0.5);}
 
-  .stat-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px; }
-  .stat-card { background:var(--bg2); border-radius:14px; padding:14px; }
-  .stat-num { font-family:'DM Serif Display',serif; font-size:30px; }
-  .stat-label { font-size:11px; color:var(--text3); margin-top:2px; }
-  .insight-card { background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:12px; }
-  .insight-heading { font-size:13px; font-weight:500; margin-bottom:12px; }
-  .bar-item { margin-bottom:10px; }
-  .bar-top { display:flex; justify-content:space-between; margin-bottom:4px; }
-  .bar-name { font-size:13px; } .bar-val { font-size:12px; color:var(--text3); }
-  .bar-track { height:7px; background:var(--bg2); border-radius:4px; overflow:hidden; }
-  .bar-fill { height:100%; border-radius:4px; }
-  .obs-text { font-size:13px; color:var(--text2); line-height:1.65; font-style:italic; margin-bottom:10px; }
-  .obs-text strong { color:var(--text); font-style:normal; }
-  .log-item { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--border); }
-  .log-item:last-child { border-bottom:none; }
-  .log-emoji { font-size:18px; } .log-body { flex:1; }
-  .log-name { font-size:14px; font-weight:500; } .log-meta { font-size:12px; color:var(--text3); margin-top:1px; }
+  /* ACTIVITY CARD */
+  .activity-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:transform 0.1s,background 0.15s;}
+  .activity-card:active{transform:scale(0.98);background:var(--bg2);}
+  .activity-card.enough{background:var(--green-light);border-color:rgba(58,125,92,0.2);}
+  .activity-icon-wrap{width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+  .activity-body{flex:1;min-width:0;}
+  .activity-name{font-size:16px;font-weight:500;}
+  .activity-meta{font-size:12px;color:var(--text3);margin-top:2px;}
+  .status-badge{font-size:11px;font-weight:500;padding:4px 10px;border-radius:20px;white-space:nowrap;}
+  .status-badge.enough{background:var(--green);color:#fff;}
+  .status-badge.active{background:var(--amber-light);color:var(--amber);}
+  .status-badge.none{background:var(--bg2);color:var(--text3);}
+  .dot-row{display:flex;gap:4px;margin-top:5px;}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--bg3);}
+  .dot.on{background:var(--purple);}.dot.enough{background:var(--green);}
 
-  .manage-card { background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; margin-bottom:16px; }
-  .manage-item { display:flex; align-items:center; gap:12px; padding:13px 16px; border-bottom:1px solid var(--border); }
-  .manage-item:last-child { border-bottom:none; }
-  .manage-emoji { font-size:22px; width:36px; text-align:center; }
-  .manage-name { flex:1; font-size:15px; }
-  .manage-actions { display:flex; gap:6px; }
-  .manage-btn { width:30px; height:30px; border-radius:8px; border:1px solid var(--border); background:var(--bg2); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:14px; }
-  .manage-btn.del { color:var(--rose); border-color:rgba(184,92,110,0.25); background:var(--rose-light); }
-  .manage-btn:active { opacity:0.7; }
-  .add-form { background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:16px; }
-  .add-form-title { font-size:14px; font-weight:500; margin-bottom:12px; }
-  .form-row { display:flex; gap:8px; margin-bottom:10px; }
-  .form-input { flex:1; background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:10px 12px; font-size:14px; font-family:'DM Sans',sans-serif; color:var(--text); outline:none; }
-  .form-input:focus { border-color:var(--purple); }
-  .emoji-input { width:56px; text-align:center; font-size:22px; flex-shrink:0; }
-  .color-row { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
-  .color-swatch { width:28px; height:28px; border-radius:50%; cursor:pointer; border:2px solid transparent; }
-  .color-swatch.selected { border-color:var(--text); }
-  .btn-add { background:var(--text); color:var(--bg); border:none; border-radius:12px; padding:10px 20px; font-size:14px; font-weight:500; font-family:'DM Sans',sans-serif; cursor:pointer; }
+  /* BOTTOM NAV */
+  .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:rgba(247,244,239,0.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-top:1px solid var(--border);display:flex;padding-bottom:var(--safe-bottom);z-index:100;}
+  .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 0 8px;cursor:pointer;gap:3px;}
+  .nav-icon{font-size:20px;}.nav-label{font-size:10px;color:var(--text3);}
+  .nav-item.active .nav-label{color:var(--text);font-weight:500;}
 
-  .toast { position:fixed; bottom:calc(var(--safe-bottom) + 90px); left:50%; transform:translateX(-50%) translateY(20px); background:var(--text); color:var(--bg); padding:10px 20px; border-radius:20px; font-size:13px; opacity:0; transition:all 0.3s; pointer-events:none; z-index:200; white-space:nowrap; }
-  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
-  .modal-overlay { position:fixed; inset:0; background:rgba(42,37,32,0.4); z-index:300; display:flex; align-items:flex-end; justify-content:center; padding-bottom:var(--safe-bottom); }
-  .modal-sheet { background:var(--bg); border-radius:24px 24px 0 0; padding:24px 20px; width:100%; max-width:430px; }
-  .modal-title { font-family:'DM Serif Display',serif; font-size:20px; margin-bottom:4px; }
-  .modal-meta { font-size:13px; color:var(--text3); margin-bottom:20px; }
-  .modal-row { display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid var(--border); }
-  .modal-row:last-of-type { border-bottom:none; }
-  .modal-label { font-size:14px; color:var(--text2); }
-  .modal-btns { display:flex; gap:8px; }
-  .modal-close { width:100%; background:var(--bg2); color:var(--text); border:none; border-radius:14px; padding:14px; font-size:15px; font-weight:500; font-family:'DM Sans',sans-serif; cursor:pointer; margin-top:16px; }
-  .modal-delete { width:100%; background:var(--rose-light); color:var(--rose); border:1px solid rgba(184,92,110,0.25); border-radius:14px; padding:12px; font-size:14px; font-family:'DM Sans',sans-serif; cursor:pointer; margin-top:8px; }
-  .toggle-btn { padding:6px 14px; border-radius:20px; font-size:12px; font-weight:500; border:1px solid var(--border); background:var(--bg2); color:var(--text2); cursor:pointer; }
-  .toggle-btn.on { background:var(--green); color:#fff; border-color:var(--green); }
-  .mood-pill { padding:5px 10px; border-radius:20px; font-size:12px; border:1px solid var(--border); background:var(--bg2); cursor:pointer; }
-  .mood-pill.selected { background:var(--purple-light); border-color:var(--purple); color:var(--purple); }
-  .empty-state { text-align:center; padding:30px 16px; }
-  .empty-text { font-size:14px; color:var(--text3); line-height:1.6; }
-  .emoji-picker-overlay { position:fixed; inset:0; background:rgba(42,37,32,0.4); z-index:300; display:flex; align-items:flex-end; justify-content:center; }
-  .emoji-picker-sheet { background:var(--bg); border-radius:24px 24px 0 0; padding:16px 0 0; width:100%; max-width:430px; max-height:70vh; display:flex; flex-direction:column; padding-bottom:var(--safe-bottom); }
-  .emoji-picker-header { padding:0 16px 10px; display:flex; align-items:center; gap:8px; }
-  .emoji-search { flex:1; background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:8px 12px; font-size:14px; font-family:'DM Sans',sans-serif; color:var(--text); outline:none; }
-  .emoji-search:focus { border-color:var(--purple); }
-  .emoji-picker-close { width:32px; height:32px; border-radius:50%; background:var(--bg2); border:none; font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-  .emoji-cats { display:flex; gap:4px; padding:0 16px 10px; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
-  .emoji-cats::-webkit-scrollbar { display:none; }
-  .emoji-cat-btn { padding:5px 12px; border-radius:20px; border:1px solid var(--border); background:var(--bg2); font-size:12px; white-space:nowrap; cursor:pointer; color:var(--text2); flex-shrink:0; }
-  .emoji-cat-btn.active { background:var(--text); color:var(--bg); border-color:var(--text); }
-  .emoji-grid { display:grid; grid-template-columns:repeat(8,1fr); gap:2px; padding:4px 12px 16px; overflow-y:auto; -webkit-overflow-scrolling:touch; }
-  .emoji-cell { font-size:28px; text-align:center; padding:6px 2px; border-radius:10px; cursor:pointer; transition:background 0.1s; }
-  .emoji-cell:active { background:var(--bg2); }
+  /* SESSION */
+  .session-back{display:flex;align-items:center;gap:8px;padding:12px 20px;cursor:pointer;}
+  .session-back-label{font-size:14px;color:var(--text2);}
+  .session-body{flex:1;display:flex;flex-direction:column;align-items:center;padding:20px;}
+  .session-icon-big{width:80px;height:80px;border-radius:24px;display:flex;align-items:center;justify-content:center;font-size:44px;margin-bottom:12px;}
+  .session-name{font-family:'DM Serif Display',serif;font-size:28px;}
+  .timer-big{font-family:'DM Serif Display',serif;font-size:56px;margin:16px 0 4px;letter-spacing:-1px;}
+  .timer-sub{font-size:13px;color:var(--text3);margin-bottom:24px;}
+  .nudge-card{width:100%;background:var(--bg2);border-radius:var(--radius);padding:16px;margin-bottom:20px;}
+  .nudge-title{font-size:13px;color:var(--text2);margin-bottom:10px;text-align:center;font-weight:300;font-style:italic;}
+  .mood-row{display:flex;gap:8px;}
+  .mood-btn{flex:1;padding:10px 4px;border-radius:12px;border:1px solid var(--border);background:var(--bg);cursor:pointer;text-align:center;transition:all 0.15s;}
+  .mood-btn.selected{border-color:var(--purple);background:var(--purple-light);}
+  .mood-emoji{font-size:20px;display:block;}.mood-label{font-size:10px;color:var(--text3);display:block;margin-top:2px;}
+  .mood-btn.selected .mood-label{color:var(--purple);}
+  .session-actions{width:100%;display:flex;flex-direction:column;gap:10px;}
+  .btn-enough{background:var(--green);color:#fff;border:none;border-radius:16px;padding:16px;font-size:16px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;}
+  .btn-enough:active{opacity:0.85;}
+  .btn-remind{background:var(--bg2);color:var(--text2);border:none;border-radius:16px;padding:14px;font-size:14px;font-family:'DM Sans',sans-serif;cursor:pointer;}
+  .btn-stop{background:transparent;color:var(--rose);border:1px solid rgba(184,92,110,0.3);border-radius:16px;padding:12px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;}
+
+  /* INSIGHTS */
+  .tab-row{display:flex;background:var(--bg2);border-radius:12px;padding:3px;margin-bottom:16px;}
+  .tab-btn{flex:1;text-align:center;padding:8px;border-radius:10px;font-size:12px;cursor:pointer;color:var(--text3);transition:all 0.15s;border:none;background:transparent;font-family:'DM Sans',sans-serif;}
+  .tab-btn.active{background:var(--bg);color:var(--text);font-weight:500;}
+  .stat-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+  .stat-card{background:var(--bg2);border-radius:14px;padding:14px;}
+  .stat-num{font-family:'DM Serif Display',serif;font-size:30px;}
+  .stat-label{font-size:11px;color:var(--text3);margin-top:2px;}
+  .insight-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;}
+  .insight-heading{font-size:13px;font-weight:500;margin-bottom:12px;}
+  .bar-item{margin-bottom:10px;}
+  .bar-top{display:flex;justify-content:space-between;margin-bottom:4px;}
+  .bar-name{font-size:13px;}.bar-val{font-size:12px;color:var(--text3);}
+  .bar-track{height:7px;background:var(--bg2);border-radius:4px;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:4px;}
+  .obs-text{font-size:13px;color:var(--text2);line-height:1.65;font-style:italic;margin-bottom:10px;}
+  .obs-text strong{color:var(--text);font-style:normal;}
+  .log-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer;}
+  .log-item:last-child{border-bottom:none;}
+  .log-emoji{font-size:18px;}.log-body{flex:1;}
+  .log-name{font-size:14px;font-weight:500;}.log-meta{font-size:12px;color:var(--text3);margin-top:1px;}
+  .month-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;}
+  .month-title{font-family:'DM Serif Display',serif;font-size:20px;margin-bottom:4px;}
+  .month-meta{font-size:12px;color:var(--text3);margin-bottom:14px;}
+  .mood-breakdown{display:flex;gap:8px;margin-top:10px;}
+  .mood-stat{flex:1;text-align:center;background:var(--bg2);border-radius:10px;padding:8px 4px;}
+  .mood-stat-emoji{font-size:18px;}
+  .mood-stat-count{font-size:13px;font-weight:500;margin-top:2px;}
+  .mood-stat-label{font-size:10px;color:var(--text3);}
+
+  /* MANAGE */
+  .manage-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px;}
+  .manage-item{display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid var(--border);}
+  .manage-item:last-child{border-bottom:none;}
+  .manage-emoji{font-size:22px;width:36px;text-align:center;}
+  .manage-name{flex:1;font-size:15px;}
+  .manage-actions{display:flex;gap:6px;}
+  .manage-btn{width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;}
+  .manage-btn.del{color:var(--rose);border-color:rgba(184,92,110,0.25);background:var(--rose-light);}
+  .manage-btn:active{opacity:0.7;}
+  .add-form{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px;}
+  .add-form-title{font-size:14px;font-weight:500;margin-bottom:12px;}
+  .form-row{display:flex;gap:8px;margin-bottom:10px;}
+  .form-input{flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:14px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;}
+  .form-input:focus{border-color:var(--purple);}
+  .emoji-input{width:56px;text-align:center;font-size:22px;flex-shrink:0;}
+  .color-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+  .color-swatch{width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid transparent;}
+  .color-swatch.selected{border-color:var(--text);}
+  .btn-add{background:var(--text);color:var(--bg);border:none;border-radius:12px;padding:10px 20px;font-size:14px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;}
+  .signout-btn{width:100%;background:transparent;color:var(--text3);border:1px solid var(--border);border-radius:14px;padding:12px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;margin-top:8px;}
+
+  /* ABOUT */
+  .about-scroll{flex:1;overflow-y:auto;padding:8px 20px 16px;-webkit-overflow-scrolling:touch;}
+  .about-hero{background:var(--text);color:var(--bg);border-radius:var(--radius);padding:24px;margin-bottom:20px;position:relative;overflow:hidden;}
+  .about-hero::before{content:'';position:absolute;right:-20px;top:-20px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,0.04);}
+  .about-hero-title{font-family:'DM Serif Display',serif;font-size:26px;margin-bottom:8px;line-height:1.2;}
+  .about-hero-sub{font-size:13px;opacity:0.6;font-weight:300;line-height:1.6;}
+  .about-section{margin-bottom:24px;}
+  .about-section-title{font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--text3);margin-bottom:10px;}
+  .about-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:10px;}
+  .about-card-title{font-size:15px;font-weight:500;margin-bottom:6px;}
+  .about-card-text{font-size:13px;color:var(--text2);line-height:1.7;}
+  .about-quote{background:var(--bg2);border-radius:var(--radius);padding:20px;margin-bottom:20px;border-left:3px solid var(--green);}
+  .about-quote-text{font-family:'DM Serif Display',serif;font-size:18px;color:var(--text);line-height:1.5;font-style:italic;}
+  .about-quote-attr{font-size:12px;color:var(--text3);margin-top:8px;}
+  .passphrase-badge{display:inline-block;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:13px;font-family:monospace;color:var(--text);margin-top:8px;}
+
+  /* EMOJI PICKER */
+  .emoji-picker-overlay{position:fixed;inset:0;background:rgba(42,37,32,0.4);z-index:300;display:flex;align-items:flex-end;justify-content:center;}
+  .emoji-picker-sheet{background:var(--bg);border-radius:24px 24px 0 0;padding:16px 0 0;width:100%;max-width:430px;max-height:70vh;display:flex;flex-direction:column;padding-bottom:var(--safe-bottom);}
+  .emoji-picker-header{padding:0 16px 10px;display:flex;align-items:center;gap:8px;}
+  .emoji-search{flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-size:14px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;}
+  .emoji-search:focus{border-color:var(--purple);}
+  .emoji-picker-close{width:32px;height:32px;border-radius:50%;background:var(--bg2);border:none;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .emoji-cats{display:flex;gap:4px;padding:0 16px 10px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+  .emoji-cats::-webkit-scrollbar{display:none;}
+  .emoji-cat-btn{padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:var(--bg2);font-size:12px;white-space:nowrap;cursor:pointer;color:var(--text2);flex-shrink:0;}
+  .emoji-cat-btn.active{background:var(--text);color:var(--bg);border-color:var(--text);}
+  .emoji-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:2px;padding:4px 12px 16px;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+  .emoji-cell{font-size:28px;text-align:center;padding:6px 2px;border-radius:10px;cursor:pointer;transition:background 0.1s;}
+  .emoji-cell:active{background:var(--bg2);}
+
+  /* MODALS */
+  .modal-overlay{position:fixed;inset:0;background:rgba(42,37,32,0.4);z-index:300;display:flex;align-items:flex-end;justify-content:center;padding-bottom:var(--safe-bottom);}
+  .modal-sheet{background:var(--bg);border-radius:24px 24px 0 0;padding:24px 20px;width:100%;max-width:430px;}
+  .modal-title{font-family:'DM Serif Display',serif;font-size:20px;margin-bottom:4px;}
+  .modal-meta{font-size:13px;color:var(--text3);margin-bottom:20px;}
+  .modal-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);}
+  .modal-row:last-of-type{border-bottom:none;}
+  .modal-label{font-size:14px;color:var(--text2);}
+  .modal-btns{display:flex;gap:8px;}
+  .modal-close{width:100%;background:var(--bg2);color:var(--text);border:none;border-radius:14px;padding:14px;font-size:15px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;margin-top:16px;}
+  .modal-delete{width:100%;background:var(--rose-light);color:var(--rose);border:1px solid rgba(184,92,110,0.25);border-radius:14px;padding:12px;font-size:14px;font-family:'DM Sans',sans-serif;cursor:pointer;margin-top:8px;}
+  .toggle-btn{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:500;border:1px solid var(--border);background:var(--bg2);color:var(--text2);cursor:pointer;}
+  .toggle-btn.on{background:var(--green);color:#fff;border-color:var(--green);}
+  .mood-pill{padding:5px 10px;border-radius:20px;font-size:12px;border:1px solid var(--border);background:var(--bg2);cursor:pointer;}
+  .mood-pill.selected{background:var(--purple-light);border-color:var(--purple);color:var(--purple);}
+
+  /* TOAST */
+  .toast{position:fixed;bottom:calc(var(--safe-bottom) + 90px);left:50%;transform:translateX(-50%) translateY(20px);background:var(--text);color:var(--bg);padding:10px 20px;border-radius:20px;font-size:13px;opacity:0;transition:all 0.3s;pointer-events:none;z-index:200;white-space:nowrap;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .empty-state{text-align:center;padding:30px 16px;}
+  .empty-text{font-size:14px;color:var(--text3);line-height:1.6;}
 </style>
 </head>
 <body>
 
-<!-- TODAY -->
-<div class="screen active" id="screen-today">
-  <div class="header">
-    <div class="header-row">
-      <div><div class="app-title">find enough</div><div class="app-date" id="today-date"></div></div>
-      <div class="header-btns">
-        <button class="icon-btn" onclick="showScreen('manage')">
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="9" cy="9" r="2.5"/><path d="M9 2v2M9 14v2M2 9h2M14 9h2M4.1 4.1l1.4 1.4M12.5 12.5l1.4 1.4M4.1 13.9l1.4-1.4M12.5 5.5l1.4-1.4"/></svg>
+<!-- LOADING -->
+<div id="loading-screen" class="loading-screen">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loading-text">loading…</div>
+</div>
+
+<!-- PASSPHRASE -->
+<div id="auth-screen" class="auth-screen" style="display:none">
+  <div class="auth-logo">find enough</div>
+  <div class="auth-tagline">a gentle practice of balance</div>
+  <div class="auth-card">
+    <div class="auth-card-title">Enter your passphrase</div>
+    <div class="auth-card-sub">You'll have been given a personal passphrase. Enter it below — you'll only need to do this once on each device.</div>
+    <input class="auth-input" id="auth-passphrase" type="text" placeholder="e.g. manhattan-dusk-3" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
+    <button class="auth-btn" id="auth-btn" onclick="handlePassphrase()">Enter</button>
+    <div class="auth-error" id="auth-error"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" class="app">
+
+  <!-- TODAY -->
+  <div class="screen active" id="screen-today">
+    <div class="header">
+      <div class="header-row">
+        <div><div class="app-title">find enough</div><div class="app-date" id="today-date"></div></div>
+        <div class="header-btns">
+          <button class="icon-btn" onclick="showScreen('manage')">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="9" cy="9" r="2.5"/><path d="M9 2v2M9 14v2M2 9h2M14 9h2M4.1 4.1l1.4 1.4M12.5 12.5l1.4 1.4M4.1 13.9l1.4-1.4M12.5 5.5l1.4-1.4"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="scroll-area">
+      <div class="balance-card">
+        <div class="balance-label">Today's balance</div>
+        <div class="balance-score" id="balance-score">—</div>
+        <div class="balance-desc" id="balance-desc">Tap an activity to start tracking</div>
+        <div class="balance-chips" id="balance-chips"></div>
+      </div>
+      <div class="section-heading">Your activities</div>
+      <div id="activity-list"></div>
+    </div>
+  </div>
+
+  <!-- SESSION -->
+  <div class="screen" id="screen-session">
+    <div class="session-back" onclick="endSession(false)">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M10 3L5 8l5 5"/></svg>
+      <span class="session-back-label">Back</span>
+    </div>
+    <div class="session-body">
+      <div class="session-icon-big" id="session-icon-big"></div>
+      <div class="session-name" id="session-name"></div>
+      <div class="timer-big" id="timer-display">0:00</div>
+      <div class="timer-sub">session time</div>
+      <div class="nudge-card" id="nudge-card" style="display:none">
+        <div class="nudge-title">How are you feeling right now?</div>
+        <div class="mood-row">
+          <button class="mood-btn" onclick="selectMood('flow')" id="mood-flow"><span class="mood-emoji">😌</span><span class="mood-label">Flow</span></button>
+          <button class="mood-btn" onclick="selectMood('good')" id="mood-good"><span class="mood-emoji">🙂</span><span class="mood-label">Good</span></button>
+          <button class="mood-btn" onclick="selectMood('meh')" id="mood-meh"><span class="mood-emoji">😶</span><span class="mood-label">Meh</span></button>
+          <button class="mood-btn" onclick="selectMood('guilt')" id="mood-guilt"><span class="mood-emoji">😬</span><span class="mood-label">Guilt</span></button>
+        </div>
+      </div>
+      <div id="confirm-end" style="display:none;width:100%;background:var(--bg2);border-radius:var(--radius);padding:16px;margin-bottom:20px;">
+        <div style="font-size:13px;color:var(--text2);margin-bottom:10px;text-align:center;font-style:italic;">How did that feel?</div>
+        <div class="mood-row" style="margin-bottom:14px;">
+          <button class="mood-btn" onclick="selectEndMood('flow')" id="end-mood-flow"><span class="mood-emoji">😌</span><span class="mood-label">Flow</span></button>
+          <button class="mood-btn" onclick="selectEndMood('good')" id="end-mood-good"><span class="mood-emoji">🙂</span><span class="mood-label">Good</span></button>
+          <button class="mood-btn" onclick="selectEndMood('meh')" id="end-mood-meh"><span class="mood-emoji">😶</span><span class="mood-label">Meh</span></button>
+          <button class="mood-btn" onclick="selectEndMood('guilt')" id="end-mood-guilt"><span class="mood-emoji">😬</span><span class="mood-label">Guilt</span></button>
+        </div>
+        <button class="btn-enough" id="confirm-enough-btn" onclick="confirmEnd()">✓ That's enough for today</button>
+        <button class="btn-stop" id="confirm-stop-btn" onclick="confirmEnd()" style="margin-top:10px;display:none;">Stop without marking enough</button>
+      </div>
+      <div class="session-actions" id="session-actions">
+        <button class="btn-enough" onclick="promptEnd(true)">✓ That's enough for today</button>
+        <button class="btn-remind" onclick="snoozeReminder()">Remind me in 30 min</button>
+        <button class="btn-stop" onclick="promptEnd(false)">Stop without marking enough</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- INSIGHTS -->
+  <div class="screen" id="screen-insights">
+    <div class="header">
+      <div class="header-row">
+        <div><div class="app-title">insights</div></div>
+      </div>
+    </div>
+    <div class="scroll-area">
+      <div class="tab-row">
+        <button class="tab-btn active" id="tab-7d" onclick="switchInsightTab('7d')">7 days</button>
+        <button class="tab-btn" id="tab-month" onclick="switchInsightTab('month')">This month</button>
+        <button class="tab-btn" id="tab-history" onclick="switchInsightTab('history')">History</button>
+      </div>
+      <div id="insights-content"></div>
+    </div>
+  </div>
+
+  <!-- MANAGE -->
+  <div class="screen" id="screen-manage">
+    <div class="header">
+      <div class="header-row">
+        <div><div class="app-title">manage</div><div class="app-date">your activities</div></div>
+        <button class="icon-btn" onclick="showScreen('today')">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M12 4L4 12M4 4l8 8"/></svg>
         </button>
       </div>
     </div>
-  </div>
-  <div class="scroll-area">
-    <div class="balance-card">
-      <div class="balance-label">Today's balance</div>
-      <div class="balance-score" id="balance-score">—</div>
-      <div class="balance-desc" id="balance-desc">Tap an activity to start tracking</div>
-      <div class="balance-chips" id="balance-chips"></div>
+    <div class="scroll-area">
+      <div class="add-form">
+        <div class="add-form-title">Add an activity</div>
+        <div class="form-row">
+          <button class="form-input emoji-input" id="new-emoji-btn" onclick="openEmojiPicker()" style="cursor:pointer;font-size:26px;display:flex;align-items:center;justify-content:center;">🌟</button>
+          <input type="hidden" id="new-emoji" value="🌟">
+          <input class="form-input" id="new-name" placeholder="Activity name" maxlength="30">
+        </div>
+        <div class="color-row" id="color-picker"></div>
+        <button class="btn-add" onclick="addActivity()">Add activity</button>
+      </div>
+      <div class="section-heading">Your activities</div>
+      <div class="manage-card" id="manage-list"></div>
+      <button class="signout-btn" onclick="signOut()">Sign out</button>
     </div>
-    <div class="section-heading">Your activities</div>
-    <div id="activity-list"></div>
   </div>
-</div>
 
-<!-- SESSION -->
-<div class="screen" id="screen-session">
-  <div class="session-back" onclick="endSession(false)">
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M10 3L5 8l5 5"/></svg>
-    <span class="session-back-label">Back</span>
-  </div>
-  <div class="session-body">
-    <div class="session-icon-big" id="session-icon-big"></div>
-    <div class="session-name" id="session-name"></div>
-    <div class="timer-big" id="timer-display">0:00</div>
-    <div class="timer-sub">session time</div>
-    <div class="nudge-card" id="nudge-card" style="display:none">
-      <div class="nudge-title">How are you feeling right now?</div>
-      <div class="mood-row">
-        <button class="mood-btn" onclick="selectMood('flow')" id="mood-flow"><span class="mood-emoji">😌</span><span class="mood-label">Flow</span></button>
-        <button class="mood-btn" onclick="selectMood('good')" id="mood-good"><span class="mood-emoji">🙂</span><span class="mood-label">Good</span></button>
-        <button class="mood-btn" onclick="selectMood('meh')" id="mood-meh"><span class="mood-emoji">😶</span><span class="mood-label">Meh</span></button>
-        <button class="mood-btn" onclick="selectMood('guilt')" id="mood-guilt"><span class="mood-emoji">😬</span><span class="mood-label">Guilt</span></button>
+  <!-- ABOUT -->
+  <div class="screen" id="screen-about">
+    <div class="header">
+      <div class="header-row">
+        <div><div class="app-title">about</div></div>
       </div>
     </div>
-    <!-- Confirm end panel — shown when user taps a stop button -->
-    <div id="confirm-end" style="display:none; width:100%; background:var(--bg2); border-radius:var(--radius); padding:16px; margin-bottom:20px;">
-      <div style="font-size:13px; color:var(--text2); margin-bottom:10px; text-align:center; font-style:italic;">How did that feel?</div>
-      <div class="mood-row" style="margin-bottom:14px;">
-        <button class="mood-btn" onclick="selectEndMood('flow')" id="end-mood-flow"><span class="mood-emoji">😌</span><span class="mood-label">Flow</span></button>
-        <button class="mood-btn" onclick="selectEndMood('good')" id="end-mood-good"><span class="mood-emoji">🙂</span><span class="mood-label">Good</span></button>
-        <button class="mood-btn" onclick="selectEndMood('meh')" id="end-mood-meh"><span class="mood-emoji">😶</span><span class="mood-label">Meh</span></button>
-        <button class="mood-btn" onclick="selectEndMood('guilt')" id="end-mood-guilt"><span class="mood-emoji">😬</span><span class="mood-label">Guilt</span></button>
+    <div class="about-scroll">
+
+      <div class="about-hero">
+        <div class="about-hero-title">find enough</div>
+        <div class="about-hero-sub">A gentle tool for finding balance in the things you love to do.</div>
       </div>
-      <button class="btn-enough" id="confirm-enough-btn" onclick="confirmEnd()">✓ That's enough for today</button>
-      <button class="btn-stop" id="confirm-stop-btn" onclick="confirmEnd()" style="margin-top:10px; display:none;">Stop without marking enough</button>
-    </div>
-    <div class="session-actions" id="session-actions">
-      <button class="btn-enough" onclick="promptEnd(true)">✓ That's enough for today</button>
-      <button class="btn-remind" onclick="snoozeReminder()">Remind me in 30 min</button>
-      <button class="btn-stop" onclick="promptEnd(false)">Stop without marking enough</button>
-    </div>
-  </div>
-</div>
 
-<!-- INSIGHTS -->
-<div class="screen" id="screen-insights">
-  <div class="header">
-    <div class="header-row">
-      <div><div class="app-title">insights</div><div class="app-date">past 7 days</div></div>
-    </div>
-  </div>
-  <div class="scroll-area" id="insights-content"></div>
-</div>
-
-<!-- MANAGE -->
-<div class="screen" id="screen-manage">
-  <div class="header">
-    <div class="header-row">
-      <div><div class="app-title">manage</div><div class="app-date">your activities</div></div>
-      <button class="icon-btn" onclick="showScreen('today')">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M12 4L4 12M4 4l8 8"/></svg>
-      </button>
-    </div>
-  </div>
-  <div class="scroll-area">
-    <div class="add-form">
-      <div class="add-form-title">Add an activity</div>
-      <div class="form-row">
-        <button class="form-input emoji-input" id="new-emoji-btn" onclick="openEmojiPicker()" style="cursor:pointer;font-size:26px;display:flex;align-items:center;justify-content:center;" title="Choose emoji">🌟</button>
-        <input type="hidden" id="new-emoji" value="🌟">
-        <input class="form-input" id="new-name" placeholder="Activity name" maxlength="30">
+      <div class="about-quote">
+        <div class="about-quote-text">"Head first, eyes closed, can't lose" — turns out, you can lose. A lot.</div>
+        <div class="about-quote-attr">— Brian, who built this app</div>
       </div>
-      <div class="color-row" id="color-picker"></div>
-      <button class="btn-add" onclick="addActivity()">Add activity</button>
+
+      <div class="about-section">
+        <div class="about-section-title">Why this exists</div>
+        <div class="about-card">
+          <div class="about-card-text">I have a tendency to go to extremes. Either I don't do something at all, or I dive in headfirst and lose all sense of balance. Piano for six hours straight. Reading until 2am. A video game weekend that somehow turns into a video game week.</div>
+        </div>
+        <div class="about-card">
+          <div class="about-card-text">The hard part isn't doing the things I love — it's knowing when I've done <em>enough</em> of them. That sweet spot between "I barely touched it today" and "I went way overboard" is surprisingly tricky to find.</div>
+        </div>
+        <div class="about-card">
+          <div class="about-card-text">So I built this. Not as a productivity tracker or a time police app — but as a gentle nudge to help me notice when I feel satisfied, and to spread that satisfaction across more of the things I care about.</div>
+        </div>
+      </div>
+
+      <div class="about-section">
+        <div class="about-section-title">How it works</div>
+        <div class="about-card">
+          <div class="about-card-title">Start a session</div>
+          <div class="about-card-text">Tap any activity on the Today screen when you start doing it. A timer runs in the background — even if you close the app.</div>
+        </div>
+        <div class="about-card">
+          <div class="about-card-title">Find your enough</div>
+          <div class="about-card-text">When you feel done — not burned out, not guilty, just genuinely satisfied — tap "That's enough for today." That's the moment this app is built around.</div>
+        </div>
+        <div class="about-card">
+          <div class="about-card-title">Check in with how you feel</div>
+          <div class="about-card-text">Every time you end a session, you'll be asked how it felt: Flow, Good, Meh, or Guilt. Over time, those check-ins reveal patterns — like which activities tend to tip into "too much," and at what point.</div>
+        </div>
+        <div class="about-card">
+          <div class="about-card-title">Look at your insights</div>
+          <div class="about-card-text">The Insights tab shows you how your time has been spread across activities — by week, by month, and over time. No judgment. Just data to help you notice what's working.</div>
+        </div>
+      </div>
+
+      <div class="about-section">
+        <div class="about-section-title">Make it yours</div>
+        <div class="about-card">
+          <div class="about-card-text">My activities won't be yours. Piano and knitting are mine — yours might be running, painting, cooking, or something else entirely. Head to the Manage tab to swap out any activity, add new ones, or reorder them however makes sense to you.</div>
+        </div>
+        <div class="about-card">
+          <div class="about-card-text">One thing I've already learned from using this: sometimes just a little time each day is genuinely enough. You don't have to go all-in every time. A short session that ends on a "Good" feeling beats a marathon that ends on "Guilt" every single time.</div>
+        </div>
+      </div>
+
+      <div class="about-section">
+        <div class="about-section-title">A note on the philosophy</div>
+        <div class="about-card">
+          <div class="about-card-text">This isn't about doing less of what you love. It's about doing more of it — sustainably. Balance isn't restriction. It's what lets you keep showing up for all the things that matter to you, day after day, without burning out or feeling guilty.</div>
+        </div>
+        <div class="about-card">
+          <div class="about-card-text">I hope this helps you do more of what you love, in a way that feels fulfilling and sustainable. That's all it's trying to do. 🌿</div>
+        </div>
+      </div>
+
+      <div class="about-section">
+        <div class="about-section-title">Your access</div>
+        <div class="about-card">
+          <div class="about-card-text">You were given a personal passphrase to access this app. Keep it somewhere safe — you'll need it if you sign in on a new device. Your data is private to you.</div>
+          <div class="passphrase-badge" id="about-passphrase"></div>
+        </div>
+      </div>
+
     </div>
-    <div class="section-heading">Your activities</div>
-    <div class="manage-card" id="manage-list"></div>
   </div>
+
+  <!-- NAV -->
+  <nav class="bottom-nav">
+    <div class="nav-item active" id="nav-today" onclick="showScreen('today')"><span class="nav-icon">🌱</span><span class="nav-label">Today</span></div>
+    <div class="nav-item" id="nav-insights" onclick="showScreen('insights')"><span class="nav-icon">✦</span><span class="nav-label">Insights</span></div>
+    <div class="nav-item" id="nav-manage" onclick="showScreen('manage')"><span class="nav-icon">⚙︎</span><span class="nav-label">Manage</span></div>
+    <div class="nav-item" id="nav-about" onclick="showScreen('about')"><span class="nav-icon">☀︎</span><span class="nav-label">About</span></div>
+  </nav>
 </div>
 
-<nav class="bottom-nav">
-  <div class="nav-item active" id="nav-today" onclick="showScreen('today')"><span class="nav-icon">🌱</span><span class="nav-label">Today</span></div>
-  <div class="nav-item" id="nav-insights" onclick="showScreen('insights')"><span class="nav-icon">✦</span><span class="nav-label">Insights</span></div>
-  <div class="nav-item" id="nav-manage" onclick="showScreen('manage')"><span class="nav-icon">⚙︎</span><span class="nav-label">Manage</span></div>
-</nav>
-
-<div class="toast" id="toast"></div>
+<!-- EMOJI PICKER -->
 <div class="emoji-picker-overlay" id="emoji-picker-overlay" style="display:none" onclick="closeEmojiPickerOutside(event)">
   <div class="emoji-picker-sheet">
     <div class="emoji-picker-header">
@@ -277,6 +456,8 @@
     <div class="emoji-grid" id="emoji-grid"></div>
   </div>
 </div>
+
+<!-- EDIT MODAL -->
 <div class="modal-overlay" id="edit-modal" style="display:none" onclick="closeEditModal(event)">
   <div class="modal-sheet">
     <div class="modal-title" id="edit-modal-title"></div>
@@ -294,109 +475,164 @@
   </div>
 </div>
 
+<div class="toast" id="toast"></div>
+
 <script>
-// ── STORAGE ──────────────────────────────────────────────────────────────────
-const STORE = 'findEnough_v3';
-const COLORS = [
+// ── SUPABASE ──────────────────────────────────────────────────────────────────
+const { createClient } = supabase;
+const sb = createClient(
+  'https://wxsefbilwilpzpjoynds.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind4c2VmYmlsd2lscHpwam95bmRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2NTY1NzUsImV4cCI6MjA5MTIzMjU3NX0.X6wYcI6IjlJNCJUEMGpOoxy1UX796PBro7_Kj7DtDVA',
+  { auth: { persistSession: false } }
+);
+
+// ── PASSPHRASES ───────────────────────────────────────────────────────────────
+const PASSPHRASES = {
+  'manhattan-dusk-3':  'user_manhattan',
+  'negroni-bloom-7':   'user_negroni',
+  'daiquiri-stone-5':  'user_daiquiri',
+  'gimlet-rain-2':     'user_gimlet',
+  'sidecar-moss-9':    'user_sidecar',
+};
+
+// ── CONSTANTS ─────────────────────────────────────────────────────────────────
+const COLORS=[
   {id:'purple',bg:'#E4DFFA',dot:'#6B5EA8'},{id:'green',bg:'#D4EDE1',dot:'#3A7D5C'},
   {id:'amber',bg:'#FAE8CC',dot:'#C8771A'},{id:'rose',bg:'#F5D9E0',dot:'#B85C6E'},
   {id:'blue',bg:'#D8EAF8',dot:'#3A6EA8'},{id:'teal',bg:'#D4EDE8',dot:'#2E7D72'},
 ];
-const DEFAULTS = [
-  {id:'piano', name:'Piano',       emoji:'🎹', colorId:'purple', order:0},
-  {id:'read',  name:'Reading',     emoji:'📖', colorId:'green',  order:1},
-  {id:'games', name:'Video games', emoji:'🎮', colorId:'amber',  order:2},
-  {id:'tv',    name:'TV / Shows',  emoji:'📺', colorId:'rose',   order:3},
-  {id:'knit',  name:'Knitting',    emoji:'🧶', colorId:'teal',   order:4},
+const DEFAULTS=[
+  {name:'Piano',emoji:'🎹',color_id:'purple',sort_order:0},
+  {name:'Reading',emoji:'📖',color_id:'green',sort_order:1},
+  {name:'Video games',emoji:'🎮',color_id:'amber',sort_order:2},
+  {name:'TV / Shows',emoji:'📺',color_id:'rose',sort_order:3},
+  {name:'Knitting',emoji:'🧶',color_id:'teal',sort_order:4},
+];
+const EMOJI_CATS=[
+  {label:'⭐ Top picks',emojis:['🎹','📖','🎮','📺','🧶','🎨','🎸','🎯','🏃','🧘','🍳','🌱','✍️','🎤','🎬','📷','🎲','🧩','🚴','🏊','⚽','🎾','🏋️','🧗','🎻','🥁','🪗','🎺','🪕','🎷']},
+  {label:'🎨 Arts',emojis:['🎨','✏️','🖌️','📝','✍️','📚','📖','📷','🎬','🎤','🎵','🎶','🎹','🎸','🎺','🎷','🥁','🪗','🎻','🪕','🎭','🎪','🖼️','🗿','📸']},
+  {label:'🏃 Sport',emojis:['🏃','🚴','🏊','🧘','🏋️','🧗','⚽','🏀','🏈','⚾','🎾','🏐','🏉','🎱','🏓','🏸','🥊','🥋','⛷️','🏂','🪂','🤸','🚵','🤾','🧜','🤼','🤺','🏇','🛹','🛼']},
+  {label:'🌿 Nature',emojis:['🌱','🌿','🍃','🌲','🌳','🌴','🌵','🌾','🍀','🌺','🌸','🌼','🌻','🌞','🌙','⭐','🌊','🏔️','🌋','🦋','🐝','🌈','🍄','🪴','🌍']},
+  {label:'🍳 Food',emojis:['🍳','🥘','🍲','🥗','🍱','🥐','🍞','🧁','🎂','🍰','🍪','🫖','☕','🍵','🧃','🥤','🍷','🍺','🧉','🫙','🥄','🔪','🍽️','🧑‍🍳','🛒']},
+  {label:'💻 Tech',emojis:['💻','📱','🖥️','⌨️','🖱️','🎮','🕹️','📡','🔭','🔬','🤖','⚙️','🔧','🔩','💡','🔋','📡','🖨️','📠','📺','📻','📼','💾','💿','📀']},
+  {label:'🏠 Home',emojis:['🏠','🛋️','🪴','🛁','🚿','🪥','🧹','🧺','🪣','🧴','🕯️','🪟','🚪','🧸','🪆','🎀','🧵','🧶','🪡','🪢','🛏️','🪑','🚽','🧼','🫧']},
+  {label:'🧠 Mind',emojis:['🧠','📿','🙏','🧘','💭','💡','📝','🗒️','📓','📔','📒','📕','📗','📘','📙','📚','🔍','🔎','💬','🗣️','👁️','✨','🌟','💫','🎯']},
 ];
 
-function loadStore() {
-  try { return JSON.parse(localStorage.getItem(STORE)) || {}; } catch { return {}; }
-}
-function saveStore(d) {
-  localStorage.setItem(STORE, JSON.stringify(d));
-}
-function getStore() {
-  const d = loadStore();
-  if (!d.activities) d.activities = DEFAULTS.map(a=>({...a}));
-  if (!d.sessions)   d.sessions   = [];
-  saveStore(d);
-  return d;
-}
-
 // ── STATE ─────────────────────────────────────────────────────────────────────
-let selectedColorId = 'purple';
-let timerInterval = null, sessionStart = null;
-let sessionActivityId = null, sessionMood = null;
-let sessionSeconds = 0, nudgeShown = false, reminderTimeout = null;
+let currentUserId=null, currentPassphrase=null;
+let activities=[], allSessions=[], todaySessions=[];
+let selectedColorId='purple', currentInsightTab='7d';
+let timerInterval=null, sessionStart=null;
+let sessionActivityId=null, sessionMood=null;
+let sessionSeconds=0, nudgeShown=false, reminderTimeout=null;
+let _pendingEnough=false, _editSessionId=null, _editEnough=false, _editMood=null;
+let _currentEmojiCat=0, _filteredEmojis=null;
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
-function todayStr() { return new Date().toISOString().slice(0,10); }
-function fmtTime(s) {
-  const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;
-  return h>0?`${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`:`${m}:${String(sec).padStart(2,'0')}`;
-}
-function fmtMins(s) {
-  if(s<60) return s+'s';
-  const m=Math.round(s/60);
-  if(m<60) return m+' min';
-  const h=Math.floor(m/60),r=m%60;
-  return r?`${h}h ${r}m`:`${h}h`;
-}
+function todayStr(){return new Date().toISOString().slice(0,10);}
+function fmtTime(s){const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;return h>0?`${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`:`${m}:${String(sec).padStart(2,'0')}`;}
+function fmtMins(s){if(s<60)return s+'s';const m=Math.round(s/60);if(m<60)return m+' min';const h=Math.floor(m/60),r=m%60;return r?`${h}h ${r}m`:`${h}h`;}
 let _tt;
-function showToast(msg) {
-  const t=document.getElementById('toast');
-  t.textContent=msg; t.classList.add('show');
-  clearTimeout(_tt); _tt=setTimeout(()=>t.classList.remove('show'),2800);
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(_tt);_tt=setTimeout(()=>t.classList.remove('show'),2800);}
+
+// ── AUTH ──────────────────────────────────────────────────────────────────────
+async function handlePassphrase(){
+  const val=document.getElementById('auth-passphrase').value.trim().toLowerCase();
+  const err=document.getElementById('auth-error');
+  const btn=document.getElementById('auth-btn');
+  err.textContent='';
+  if(!val){err.textContent='Please enter your passphrase.';return;}
+  const userId=PASSPHRASES[val];
+  if(!userId){err.textContent='Passphrase not recognised. Check your spelling and try again.';return;}
+  btn.disabled=true;btn.textContent='Signing in…';
+  localStorage.setItem('findEnough_passphrase',val);
+  localStorage.setItem('findEnough_userId',userId);
+  currentUserId=userId;currentPassphrase=val;
+  await initApp();
+  btn.disabled=false;btn.textContent='Enter';
+}
+
+function signOut(){
+  localStorage.removeItem('findEnough_passphrase');
+  localStorage.removeItem('findEnough_userId');
+  localStorage.removeItem('findEnough_activeSession');
+  currentUserId=null;currentPassphrase=null;
+  activities=[];allSessions=[];todaySessions=[];
+  document.getElementById('app').classList.remove('ready');
+  document.getElementById('auth-screen').style.display='flex';
+  document.getElementById('loading-screen').style.display='none';
+}
+
+// ── DATA ──────────────────────────────────────────────────────────────────────
+async function loadData(){
+  const uid=currentUserId;
+  const [actsRes,sessRes]=await Promise.all([
+    sb.from('activities').select('*').eq('user_id',uid).order('sort_order'),
+    sb.from('sessions').select('*').eq('user_id',uid).order('created_at',{ascending:false})
+  ]);
+  if(actsRes.data&&actsRes.data.length===0){
+    const {data:newActs}=await sb.from('activities').insert(DEFAULTS.map(a=>({...a,user_id:uid}))).select();
+    activities=newActs||[];
+  } else {activities=actsRes.data||[];}
+  allSessions=sessRes.data||[];
+  todaySessions=allSessions.filter(s=>s.date===todayStr());
+}
+
+async function initApp(){
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('loading-screen').style.display='flex';
+  document.getElementById('loading-text').textContent='Loading your data…';
+  try{
+    await loadData();
+    document.getElementById('loading-screen').style.display='none';
+    document.getElementById('app').classList.add('ready');
+    document.getElementById('about-passphrase').textContent=currentPassphrase;
+    restoreSession();
+    showScreen('today');
+  }catch(e){
+    document.getElementById('loading-text').textContent='Connection error — check your network and try again.';
+  }
 }
 
 // ── SCREENS ───────────────────────────────────────────────────────────────────
-function showScreen(name) {
+function showScreen(name){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('screen-'+name).classList.add('active');
-  const nav=document.getElementById('nav-'+name);
-  if(nav) nav.classList.add('active');
-  if(name==='today')    renderToday();
-  if(name==='insights') renderInsights();
-  if(name==='manage')   renderManage();
+  const nav=document.getElementById('nav-'+name);if(nav)nav.classList.add('active');
+  if(name==='today')renderToday();
+  if(name==='insights')renderInsights();
+  if(name==='manage')renderManage();
 }
 
 // ── TODAY ─────────────────────────────────────────────────────────────────────
-function renderToday() {
-  document.getElementById('today-date').textContent = new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
-  const d = getStore();
-  const todaySess = d.sessions.filter(s=>s.date===todayStr());
-  const enoughIds = new Set(todaySess.filter(s=>s.enough).map(s=>s.activityId));
-  const enoughCount = d.activities.filter(a=>enoughIds.has(a.id)).length;
-  const touched = new Set(todaySess.map(s=>s.activityId)).size;
-
-  let score='—', desc='Tap an activity to start tracking';
-  if(d.activities.length>0 && (enoughCount>0||touched>0)) {
-    const pct=Math.round(enoughCount/d.activities.length*100);
-    score=pct+'%';
+function renderToday(){
+  document.getElementById('today-date').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+  const enoughIds=new Set(todaySessions.filter(s=>s.enough).map(s=>s.activity_id));
+  const enoughCount=activities.filter(a=>enoughIds.has(a.id)).length;
+  const touched=new Set(todaySessions.map(s=>s.activity_id)).size;
+  let score='—',desc='Tap an activity to start tracking';
+  if(activities.length>0&&(enoughCount>0||touched>0)){
+    const pct=Math.round(enoughCount/activities.length*100);score=pct+'%';
     desc=pct===0?'Just getting started — that\'s fine.':pct<40?'A few moments of enough today.':pct<75?'Good balance building today.':'Beautifully balanced day.';
   }
   document.getElementById('balance-score').textContent=score;
   document.getElementById('balance-desc').textContent=desc;
-  document.getElementById('balance-chips').innerHTML=d.activities.map(a=>
+  document.getElementById('balance-chips').innerHTML=activities.map(a=>
     `<span class="balance-chip ${enoughIds.has(a.id)?'done':''}">${a.emoji} ${a.name}</span>`
   ).join('');
-
   const list=document.getElementById('activity-list');
-  if(d.activities.length===0){
-    list.innerHTML='<div class="empty-state"><div class="empty-text">No activities yet.<br>Go to Manage to add some.</div></div>';
-    return;
-  }
-  list.innerHTML=d.activities.map(a=>{
-    const actS=todaySess.filter(s=>s.activityId===a.id);
-    const isEnough=enoughIds.has(a.id), isActive=sessionActivityId===a.id;
+  if(activities.length===0){list.innerHTML='<div class="empty-state"><div class="empty-text">No activities yet.<br>Go to Manage to add some.</div></div>';return;}
+  list.innerHTML=activities.map(a=>{
+    const actS=todaySessions.filter(s=>s.activity_id===a.id);
+    const isEnough=enoughIds.has(a.id),isActive=sessionActivityId===a.id;
     const totalSec=actS.reduce((sum,s)=>sum+(s.duration||0),0)+(isActive?sessionSeconds:0);
-    const color=COLORS.find(c=>c.id===a.colorId)||COLORS[0];
+    const color=COLORS.find(c=>c.id===a.color_id)||COLORS[0];
     const filled=isEnough?5:Math.min(actS.length,4);
     const dots=Array.from({length:5},(_,i)=>`<span class="dot ${isEnough?'enough':i<filled?'on':''}"></span>`).join('');
     const badge=isActive?`<span class="status-badge active">Active</span>`:isEnough?`<span class="status-badge enough">Enough ✓</span>`:`<span class="status-badge none">${totalSec>0?fmtMins(totalSec):'Start'}</span>`;
-    return `<div class="activity-card ${isEnough?'enough':''}" onclick="startSession('${a.id}')">
+    return`<div class="activity-card ${isEnough?'enough':''}" onclick="startSession('${a.id}')">
       <div class="activity-icon-wrap" style="background:${color.bg}">${a.emoji}</div>
       <div class="activity-body"><div class="activity-name">${a.name}</div><div class="dot-row">${dots}</div><div class="activity-meta">${totalSec>0?fmtMins(totalSec)+' today':'Not started'}</div></div>
       <div>${badge}</div></div>`;
@@ -404,16 +640,12 @@ function renderToday() {
 }
 
 // ── SESSION ───────────────────────────────────────────────────────────────────
-function startSession(id) {
-  const d=getStore();
-  const act=d.activities.find(a=>a.id===id);
-  if(!act) return;
-  const todaySess=d.sessions.filter(s=>s.date===todayStr());
-  if(todaySess.some(s=>s.activityId===id&&s.enough)){showToast(`You've already found enough ${act.name} today 🌿`);return;}
-  sessionActivityId=id; sessionStart=Date.now(); sessionSeconds=0; sessionMood=null; nudgeShown=false;
-  // Persist active session so timer survives app close
-  localStorage.setItem('findEnough_activeSession', JSON.stringify({activityId:id, startTime:sessionStart}));
-  const color=COLORS.find(c=>c.id===act.colorId)||COLORS[0];
+function startSession(id){
+  const act=activities.find(a=>a.id===id);if(!act)return;
+  if(todaySessions.some(s=>s.activity_id===id&&s.enough)){showToast(`You've already found enough ${act.name} today 🌿`);return;}
+  sessionActivityId=id;sessionStart=Date.now();sessionSeconds=0;sessionMood=null;nudgeShown=false;
+  localStorage.setItem('findEnough_activeSession',JSON.stringify({activityId:id,startTime:sessionStart}));
+  const color=COLORS.find(c=>c.id===act.color_id)||COLORS[0];
   document.getElementById('session-icon-big').style.background=color.bg;
   document.getElementById('session-icon-big').textContent=act.emoji;
   document.getElementById('session-name').textContent=act.name;
@@ -422,134 +654,228 @@ function startSession(id) {
   document.getElementById('session-actions').style.display='flex';
   document.querySelectorAll('.mood-btn').forEach(b=>b.classList.remove('selected'));
   document.querySelectorAll('[id^="end-mood-"]').forEach(b=>b.classList.remove('selected'));
-  showScreen('session');
-  document.getElementById('nav-today').classList.add('active');
+  showScreen('session');document.getElementById('nav-today').classList.add('active');
   clearInterval(timerInterval);
   timerInterval=setInterval(()=>{
     sessionSeconds=Math.floor((Date.now()-sessionStart)/1000);
     document.getElementById('timer-display').textContent=fmtTime(sessionSeconds);
-    if(!nudgeShown&&sessionSeconds>=300){document.getElementById('nudge-card').style.display='block';nudgeShown=true;}
+    if(!nudgeShown&&sessionSeconds>=1800){document.getElementById('nudge-card').style.display='block';nudgeShown=true;}
   },1000);
 }
 
-function selectMood(mood) {
-  sessionMood=mood;
-  document.querySelectorAll('.mood-btn').forEach(b=>b.classList.remove('selected'));
-  document.getElementById('mood-'+mood).classList.add('selected');
+function restoreSession(){
+  try{
+    const saved=localStorage.getItem('findEnough_activeSession');
+    if(!saved)return;
+    const{activityId,startTime}=JSON.parse(saved);
+    const act=activities.find(a=>a.id===activityId);
+    if(!act){localStorage.removeItem('findEnough_activeSession');return;}
+    sessionActivityId=activityId;sessionStart=startTime;
+    sessionSeconds=Math.floor((Date.now()-startTime)/1000);
+    sessionMood=null;nudgeShown=sessionSeconds>=1800;
+    const color=COLORS.find(c=>c.id===act.color_id)||COLORS[0];
+    document.getElementById('session-icon-big').style.background=color.bg;
+    document.getElementById('session-icon-big').textContent=act.emoji;
+    document.getElementById('session-name').textContent=act.name;
+    document.getElementById('nudge-card').style.display=nudgeShown?'block':'none';
+    document.getElementById('confirm-end').style.display='none';
+    document.getElementById('session-actions').style.display='flex';
+    document.getElementById('timer-display').textContent=fmtTime(sessionSeconds);
+    clearInterval(timerInterval);
+    timerInterval=setInterval(()=>{
+      sessionSeconds=Math.floor((Date.now()-sessionStart)/1000);
+      document.getElementById('timer-display').textContent=fmtTime(sessionSeconds);
+      if(!nudgeShown&&sessionSeconds>=1800){document.getElementById('nudge-card').style.display='block';nudgeShown=true;}
+    },1000);
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+    document.getElementById('screen-session').classList.add('active');
+    document.getElementById('nav-today').classList.add('active');
+  }catch(e){localStorage.removeItem('findEnough_activeSession');}
 }
 
-let _pendingEnough = false;
-function promptEnd(markEnough) {
-  _pendingEnough = markEnough;
-  // Reset end mood buttons
+function selectMood(mood){sessionMood=mood;document.querySelectorAll('.mood-btn').forEach(b=>b.classList.remove('selected'));document.getElementById('mood-'+mood).classList.add('selected');}
+
+function promptEnd(markEnough){
+  _pendingEnough=markEnough;sessionMood=null;
   document.querySelectorAll('[id^="end-mood-"]').forEach(b=>b.classList.remove('selected'));
-  sessionMood = null;
-  // Show correct confirm button
-  document.getElementById('confirm-enough-btn').style.display = markEnough ? 'block' : 'none';
-  document.getElementById('confirm-stop-btn').style.display = markEnough ? 'none' : 'block';
-  // Swap panels
-  document.getElementById('session-actions').style.display = 'none';
-  document.getElementById('nudge-card').style.display = 'none';
-  document.getElementById('confirm-end').style.display = 'block';
+  document.getElementById('confirm-enough-btn').style.display=markEnough?'block':'none';
+  document.getElementById('confirm-stop-btn').style.display=markEnough?'none':'block';
+  document.getElementById('session-actions').style.display='none';
+  document.getElementById('nudge-card').style.display='none';
+  document.getElementById('confirm-end').style.display='block';
 }
 
-function selectEndMood(mood) {
-  sessionMood = mood;
-  document.querySelectorAll('[id^="end-mood-"]').forEach(b=>b.classList.remove('selected'));
-  document.getElementById('end-mood-'+mood).classList.add('selected');
-}
+function selectEndMood(mood){sessionMood=mood;document.querySelectorAll('[id^="end-mood-"]').forEach(b=>b.classList.remove('selected'));document.getElementById('end-mood-'+mood).classList.add('selected');}
+function confirmEnd(){endSession(_pendingEnough);}
 
-function confirmEnd() {
-  endSession(_pendingEnough);
-}
-
-function snoozeReminder() {
-  showToast('Reminder set for 30 minutes');
-  clearTimeout(reminderTimeout);
+function snoozeReminder(){
+  showToast('Reminder set for 30 minutes');clearTimeout(reminderTimeout);
   reminderTimeout=setTimeout(()=>{document.getElementById('nudge-card').style.display='block';showToast('30 minutes have passed 🌿');},30*60*1000);
 }
 
-function endSession(markEnough) {
-  clearInterval(timerInterval); clearTimeout(reminderTimeout);
-  if(sessionActivityId && sessionSeconds>5) {
-    const d=getStore();
-    d.sessions.push({id:'s_'+Date.now(), activityId:sessionActivityId, date:todayStr(), duration:sessionSeconds, enough:markEnough, mood:sessionMood, ts:Date.now()});
-    saveStore(d);
-    if(markEnough) showToast('Enough found. Well done 🌿');
+async function endSession(markEnough){
+  clearInterval(timerInterval);clearTimeout(reminderTimeout);
+  if(sessionActivityId&&sessionSeconds>5){
+    const rec={user_id:currentUserId,activity_id:sessionActivityId,date:todayStr(),duration:sessionSeconds,enough:markEnough,mood:sessionMood};
+    const{data,error}=await sb.from('sessions').insert(rec).select().single();
+    if(!error&&data){todaySessions.push(data);allSessions.unshift(data);}
+    if(markEnough)showToast('Enough found. Well done 🌿');
   }
-  sessionActivityId=null; sessionSeconds=0;
+  sessionActivityId=null;sessionSeconds=0;
   localStorage.removeItem('findEnough_activeSession');
   showScreen('today');
 }
 
 // ── INSIGHTS ──────────────────────────────────────────────────────────────────
-function renderInsights() {
-  const d=getStore();
+let _insightTab='7d';
+function switchInsightTab(tab){
+  _insightTab=tab;
+  ['7d','month','history'].forEach(t=>{
+    document.getElementById('tab-'+t).classList.toggle('active',t===tab);
+  });
+  renderInsights();
+}
+
+function renderInsights(){
+  const content=document.getElementById('insights-content');
+  if(_insightTab==='7d') content.innerHTML=renderPeriodInsights(getLast7());
+  else if(_insightTab==='month') content.innerHTML=renderPeriodInsights(getCurrentMonth());
+  else content.innerHTML=renderHistory();
+}
+
+function getLast7(){
   const today=new Date();
-  const last7=Array.from({length:7},(_,i)=>{const x=new Date(today);x.setDate(x.getDate()-i);return x.toISOString().slice(0,10);});
-  const recent=d.sessions.filter(s=>last7.includes(s.date));
-  const totalMins=Math.round(recent.reduce((sum,s)=>sum+(s.duration||0),0)/60);
-  const enoughCount=recent.filter(s=>s.enough).length;
-  const activeDays=new Set(recent.map(s=>s.date)).size;
-  const actTimes=d.activities.map(a=>{
-    const secs=recent.filter(s=>s.activityId===a.id).reduce((sum,s)=>sum+(s.duration||0),0);
-    const moods=recent.filter(s=>s.activityId===a.id&&s.mood).map(s=>s.mood);
+  const days=Array.from({length:7},(_,i)=>{const d=new Date(today);d.setDate(d.getDate()-i);return d.toISOString().slice(0,10);});
+  return{sessions:allSessions.filter(s=>days.includes(s.date)),label:'past 7 days'};
+}
+
+function getCurrentMonth(){
+  const now=new Date();
+  const prefix=now.toISOString().slice(0,7);
+  return{sessions:allSessions.filter(s=>s.date.startsWith(prefix)),label:now.toLocaleDateString('en-US',{month:'long',year:'numeric'})};
+}
+
+function renderPeriodInsights({sessions,label}){
+  const totalMins=Math.round(sessions.reduce((sum,s)=>sum+(s.duration||0),0)/60);
+  const enoughCount=sessions.filter(s=>s.enough).length;
+  const activeDays=new Set(sessions.map(s=>s.date)).size;
+  const actTimes=activities.map(a=>{
+    const secs=sessions.filter(s=>s.activity_id===a.id).reduce((sum,s)=>sum+(s.duration||0),0);
+    const moods=sessions.filter(s=>s.activity_id===a.id&&s.mood).map(s=>s.mood);
     return{...a,secs,moods};
   }).sort((a,b)=>b.secs-a.secs);
   const maxSecs=Math.max(...actTimes.map(a=>a.secs),1);
+  const moodCounts={flow:0,good:0,meh:0,guilt:0};
+  sessions.forEach(s=>{if(s.mood)moodCounts[s.mood]++;});
   const obs=[];
   actTimes.forEach(a=>{
-    if(a.secs===0) obs.push(`<strong>${a.emoji} ${a.name}</strong> hasn't been visited this week. Might be worth a moment.`);
+    if(a.secs===0)obs.push(`<strong>${a.emoji} ${a.name}</strong> hasn't been visited. Might be worth a moment.`);
     const neg=a.moods.filter(m=>m==='guilt'||m==='meh').length;
-    if(neg>=2) obs.push(`You rated <strong>${a.emoji} ${a.name}</strong> as "meh" or "guilt" ${neg} times. Notice what was different on those sessions.`);
+    if(neg>=2)obs.push(`You rated <strong>${a.emoji} ${a.name}</strong> as "meh" or "guilt" ${neg} times. Notice what was different on those sessions.`);
   });
-  if(enoughCount===0&&recent.length>0) obs.push(`You haven't marked any activity as "enough" yet. Try it — it's a small but powerful moment.`);
-  if(enoughCount>=5) obs.push(`<strong>${enoughCount} "enough" moments</strong> this week. You're building the habit of noticing satisfaction.`);
+  if(enoughCount===0&&sessions.length>0)obs.push(`You haven't marked any activity as "enough" yet. Try it — it's a small but powerful moment.`);
+  if(enoughCount>=5)obs.push(`<strong>${enoughCount} "enough" moments</strong>. You're building the habit of noticing satisfaction.`);
 
-  document.getElementById('insights-content').innerHTML=`
-    <div class="stat-row">
-      <div class="stat-card"><div class="stat-num">${totalMins}</div><div class="stat-label">minutes tracked</div></div>
-      <div class="stat-card"><div class="stat-num">${enoughCount}</div><div class="stat-label">enough moments</div></div>
-      <div class="stat-card"><div class="stat-num">${activeDays}</div><div class="stat-label">active days</div></div>
-      <div class="stat-card"><div class="stat-num">${d.activities.length}</div><div class="stat-label">activities</div></div>
+  const moodTotal=Object.values(moodCounts).reduce((a,b)=>a+b,0);
+  const moodHTML=moodTotal>0?`<div class="insight-card">
+    <div class="insight-heading">Mood breakdown — ${label}</div>
+    <div class="mood-breakdown">
+      <div class="mood-stat"><div class="mood-stat-emoji">😌</div><div class="mood-stat-count">${moodCounts.flow}</div><div class="mood-stat-label">Flow</div></div>
+      <div class="mood-stat"><div class="mood-stat-emoji">🙂</div><div class="mood-stat-count">${moodCounts.good}</div><div class="mood-stat-label">Good</div></div>
+      <div class="mood-stat"><div class="mood-stat-emoji">😶</div><div class="mood-stat-count">${moodCounts.meh}</div><div class="mood-stat-label">Meh</div></div>
+      <div class="mood-stat"><div class="mood-stat-emoji">😬</div><div class="mood-stat-count">${moodCounts.guilt}</div><div class="mood-stat-label">Guilt</div></div>
     </div>
-    <div class="insight-card">
-      <div class="insight-heading">Time this week</div>
-      ${actTimes.length===0?'<div class="obs-text">No sessions yet.</div>':actTimes.map(a=>{
-        const color=COLORS.find(c=>c.id===a.colorId)||COLORS[0];
+  </div>`:'';
+
+  return`<div class="stat-row">
+    <div class="stat-card"><div class="stat-num">${totalMins}</div><div class="stat-label">minutes tracked</div></div>
+    <div class="stat-card"><div class="stat-num">${enoughCount}</div><div class="stat-label">enough moments</div></div>
+    <div class="stat-card"><div class="stat-num">${activeDays}</div><div class="stat-label">active days</div></div>
+    <div class="stat-card"><div class="stat-num">${sessions.length}</div><div class="stat-label">sessions</div></div>
+  </div>
+  <div class="insight-card">
+    <div class="insight-heading">Time — ${label}</div>
+    ${actTimes.length===0?'<div class="obs-text">No sessions yet.</div>':actTimes.map(a=>{
+      const color=COLORS.find(c=>c.id===a.color_id)||COLORS[0];
+      const pct=Math.round(a.secs/maxSecs*100);
+      return`<div class="bar-item"><div class="bar-top"><span class="bar-name">${a.emoji} ${a.name}</span><span class="bar-val">${fmtMins(a.secs)}</span></div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color.dot}"></div></div></div>`;
+    }).join('')}
+  </div>
+  ${moodHTML}
+  ${obs.length>0?`<div class="insight-card"><div class="insight-heading">Gentle observations</div>${obs.map(o=>`<p class="obs-text">${o}</p>`).join('')}</div>`:''}
+  <div class="insight-card">
+    <div class="insight-heading">Recent sessions</div>
+    ${sessions.length===0?'<div class="obs-text">No sessions yet.</div>':sessions.slice(0,12).map(s=>{
+      const act=activities.find(a=>a.id===s.activity_id);if(!act)return'';
+      const me={flow:'😌',good:'🙂',meh:'😶',guilt:'😬'}[s.mood]||'';
+      const d=new Date(s.created_at);
+      return`<div class="log-item" onclick="openEditModal('${s.id}')"><div class="log-emoji">${act.emoji}</div><div class="log-body"><div class="log-name">${act.name} ${s.enough?'🌿':''}</div><div class="log-meta">${d.toLocaleDateString('en-US',{month:'short',day:'numeric'})} · ${fmtMins(s.duration)}</div></div><div style="display:flex;align-items:center;gap:6px">${me} <span style="font-size:11px;color:var(--text3)">edit</span></div></div>`;
+    }).join('')}
+  </div>`;
+}
+
+function renderHistory(){
+  // Group sessions by month
+  const months={};
+  allSessions.forEach(s=>{
+    const m=s.date.slice(0,7);
+    if(!months[m])months[m]=[];
+    months[m].push(s);
+  });
+  const sortedMonths=Object.keys(months).sort().reverse();
+  if(sortedMonths.length===0)return'<div class="empty-state"><div class="empty-text">No history yet.<br>Start tracking to see monthly summaries.</div></div>';
+
+  return sortedMonths.map(m=>{
+    const sess=months[m];
+    const d=new Date(m+'-01');
+    const label=d.toLocaleDateString('en-US',{month:'long',year:'numeric'});
+    const totalMins=Math.round(sess.reduce((sum,s)=>sum+(s.duration||0),0)/60);
+    const enoughCount=sess.filter(s=>s.enough).length;
+    const activeDays=new Set(sess.map(s=>s.date)).size;
+    const moodCounts={flow:0,good:0,meh:0,guilt:0};
+    sess.forEach(s=>{if(s.mood)moodCounts[s.mood]++;});
+    const actTimes=activities.map(a=>{
+      const secs=sess.filter(s=>s.activity_id===a.id).reduce((sum,s)=>sum+(s.duration||0),0);
+      return{...a,secs};
+    }).filter(a=>a.secs>0).sort((a,b)=>b.secs-a.secs);
+    const maxSecs=Math.max(...actTimes.map(a=>a.secs),1);
+    const moodTotal=Object.values(moodCounts).reduce((a,b)=>a+b,0);
+
+    return`<div class="month-card">
+      <div class="month-title">${label}</div>
+      <div class="month-meta">${totalMins} min tracked · ${enoughCount} enough moments · ${activeDays} active days</div>
+      ${actTimes.map(a=>{
+        const color=COLORS.find(c=>c.id===a.color_id)||COLORS[0];
         const pct=Math.round(a.secs/maxSecs*100);
         return`<div class="bar-item"><div class="bar-top"><span class="bar-name">${a.emoji} ${a.name}</span><span class="bar-val">${fmtMins(a.secs)}</span></div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color.dot}"></div></div></div>`;
       }).join('')}
-    </div>
-    ${obs.length>0?`<div class="insight-card"><div class="insight-heading">Gentle observations</div>${obs.map(o=>`<p class="obs-text">${o}</p>`).join('')}</div>`:''}
-    <div class="insight-card">
-      <div class="insight-heading">Recent sessions</div>
-      ${d.sessions.length===0?'<div class="obs-text">No sessions yet.</div>':d.sessions.slice().reverse().slice(0,12).map(s=>{
-        const act=d.activities.find(a=>a.id===s.activityId);if(!act)return'';
-        const me={flow:'😌',good:'🙂',meh:'😶',guilt:'😬'}[s.mood]||'';
-        const dt=new Date(s.ts);
-        return`<div class="log-item" onclick="openEditModal('${s.id}')" style="cursor:pointer"><div class="log-emoji">${act.emoji}</div><div class="log-body"><div class="log-name">${act.name} ${s.enough?'🌿':''}</div><div class="log-meta">${dt.toLocaleDateString('en-US',{month:'short',day:'numeric'})} · ${fmtMins(s.duration)}</div></div><div style="display:flex;align-items:center;gap:6px">${me} <span style="font-size:11px;color:var(--text3)">edit</span></div></div>`;
-      }).join('')}
+      ${moodTotal>0?`<div class="mood-breakdown">
+        <div class="mood-stat"><div class="mood-stat-emoji">😌</div><div class="mood-stat-count">${moodCounts.flow}</div><div class="mood-stat-label">Flow</div></div>
+        <div class="mood-stat"><div class="mood-stat-emoji">🙂</div><div class="mood-stat-count">${moodCounts.good}</div><div class="mood-stat-label">Good</div></div>
+        <div class="mood-stat"><div class="mood-stat-emoji">😶</div><div class="mood-stat-count">${moodCounts.meh}</div><div class="mood-stat-label">Meh</div></div>
+        <div class="mood-stat"><div class="mood-stat-emoji">😬</div><div class="mood-stat-count">${moodCounts.guilt}</div><div class="mood-stat-label">Guilt</div></div>
+      </div>`:''}
     </div>`;
+  }).join('');
 }
 
 // ── MANAGE ────────────────────────────────────────────────────────────────────
-function renderManage() {
+function renderManage(){
   document.getElementById('color-picker').innerHTML=COLORS.map(c=>
     `<div class="color-swatch ${c.id===selectedColorId?'selected':''}" style="background:${c.bg};border-color:${c.id===selectedColorId?c.dot:'transparent'}" onclick="selectColor('${c.id}')"></div>`
   ).join('');
-  const d=getStore();
   const ml=document.getElementById('manage-list');
-  if(d.activities.length===0){ml.innerHTML='<div class="empty-state"><div class="empty-text">No activities yet.</div></div>';return;}
-  ml.innerHTML=d.activities.map((a,i)=>{
-    const color=COLORS.find(c=>c.id===a.colorId)||COLORS[0];
+  if(activities.length===0){ml.innerHTML='<div class="empty-state"><div class="empty-text">No activities yet.</div></div>';return;}
+  ml.innerHTML=activities.map((a,i)=>{
+    const color=COLORS.find(c=>c.id===a.color_id)||COLORS[0];
     return`<div class="manage-item">
       <div class="manage-emoji">${a.emoji}</div>
       <div class="manage-name">${a.name}</div>
       <div style="width:10px;height:10px;border-radius:50%;background:${color.dot};margin-right:4px;flex-shrink:0"></div>
       <div class="manage-actions">
         ${i>0?`<button class="manage-btn" onclick="moveActivity(${i},-1)">↑</button>`:'<div style="width:30px"></div>'}
-        ${i<d.activities.length-1?`<button class="manage-btn" onclick="moveActivity(${i},1)">↓</button>`:'<div style="width:30px"></div>'}
+        ${i<activities.length-1?`<button class="manage-btn" onclick="moveActivity(${i},1)">↓</button>`:'<div style="width:30px"></div>'}
         <button class="manage-btn del" onclick="deleteActivity('${a.id}')">✕</button>
       </div></div>`;
   }).join('');
@@ -557,221 +883,94 @@ function renderManage() {
 
 function selectColor(id){selectedColorId=id;renderManage();}
 
-function addActivity() {
+async function addActivity(){
   const emoji=document.getElementById('new-emoji').value.trim()||'⭐';
   const name=document.getElementById('new-name').value.trim();
   if(!name){showToast('Please enter a name');return;}
-  const d=getStore();
-  d.activities.push({id:'act_'+Date.now(),name,emoji,colorId:selectedColorId,order:d.activities.length});
-  saveStore(d);
-  document.getElementById('new-emoji').value='';
-  document.getElementById('new-name').value='';
-  selectedColorId='purple';
-  renderManage();
-  showToast(`${emoji} ${name} added`);
+  const{data,error}=await sb.from('activities').insert({user_id:currentUserId,name,emoji,color_id:selectedColorId,sort_order:activities.length}).select().single();
+  if(!error&&data){
+    activities.push(data);
+    document.getElementById('new-emoji').value='🌟';
+    document.getElementById('new-emoji-btn').textContent='🌟';
+    document.getElementById('new-name').value='';
+    selectedColorId='purple';renderManage();showToast(`${emoji} ${name} added`);
+  } else showToast('Error saving — check your connection');
 }
 
-function deleteActivity(id) {
-  const d=getStore();
-  d.activities=d.activities.filter(a=>a.id!==id);
-  d.sessions=d.sessions.filter(s=>s.activityId!==id);
-  saveStore(d);
-  renderManage();
-  showToast('Activity removed');
-}
-
-function moveActivity(index,dir) {
-  const d=getStore();
-  const ni=index+dir;
-  if(ni<0||ni>=d.activities.length)return;
-  [d.activities[index],d.activities[ni]]=[d.activities[ni],d.activities[index]];
-  saveStore(d);
-  renderManage();
-}
-
-// ── EDIT MODAL ───────────────────────────────────────────────────────────────
-let _editSessionId = null;
-let _editEnough = false;
-let _editMood = null;
-
-function openEditModal(sessionId) {
-  const d = getStore();
-  const s = d.sessions.find(x => x.id === sessionId);
-  if (!s) return;
-  const act = d.activities.find(a => a.id === s.activityId);
-  if (!act) return;
-  _editSessionId = sessionId;
-  _editEnough = s.enough;
-  _editMood = s.mood;
-  const dt = new Date(s.ts);
-  document.getElementById('edit-modal-title').textContent = act.emoji + ' ' + act.name;
-  document.getElementById('edit-modal-meta').textContent = dt.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}) + ' · ' + fmtMins(s.duration);
-  document.getElementById('edit-enough-btn').textContent = _editEnough ? 'Enough ✓' : 'Not enough';
-  document.getElementById('edit-enough-btn').className = 'toggle-btn' + (_editEnough ? ' on' : '');
-  renderEditMoods();
-  document.getElementById('edit-modal').style.display = 'flex';
-}
-
-function renderEditMoods() {
-  const moods = [{id:'flow',label:'😌 Flow'},{id:'good',label:'🙂 Good'},{id:'meh',label:'😶 Meh'},{id:'guilt',label:'😬 Guilt'}];
-  document.getElementById('edit-mood-btns').innerHTML = moods.map(m =>
-    `<button class="mood-pill ${_editMood===m.id?'selected':''}" onclick="setEditMood('${m.id}')">${m.label}</button>`
-  ).join('');
-}
-
-function setEditMood(mood) {
-  _editMood = _editMood === mood ? null : mood;
-  renderEditMoods();
-}
-
-function toggleEditEnough() {
-  _editEnough = !_editEnough;
-  document.getElementById('edit-enough-btn').textContent = _editEnough ? 'Enough ✓' : 'Not enough';
-  document.getElementById('edit-enough-btn').className = 'toggle-btn' + (_editEnough ? ' on' : '');
-}
-
-function saveEditSession() {
-  const d = getStore();
-  const idx = d.sessions.findIndex(s => s.id === _editSessionId);
-  if (idx === -1) return;
-  d.sessions[idx].enough = _editEnough;
-  d.sessions[idx].mood = _editMood;
-  saveStore(d);
-  document.getElementById('edit-modal').style.display = 'none';
-  showToast('Entry updated');
-  renderInsights();
-}
-
-function deleteEditSession() {
-  const d = getStore();
-  d.sessions = d.sessions.filter(s => s.id !== _editSessionId);
-  saveStore(d);
-  document.getElementById('edit-modal').style.display = 'none';
-  showToast('Entry deleted');
-  renderInsights();
-  renderToday();
-}
-
-function closeEditModal(e) {
-  if (e.target.id === 'edit-modal') document.getElementById('edit-modal').style.display = 'none';
-}
-
-// ── EMOJI PICKER ─────────────────────────────────────────────────────────────
-const EMOJI_CATS = [
-  { label: '⭐ Top picks', emojis: ['🎹','📖','🎮','📺','🧶','🎨','🎸','🎯','🏃','🧘','🍳','🌱','✍️','🎤','🎬','📷','🎲','🧩','🚴','🏊','⚽','🎾','🏋️','🧗','🎻','🥁','🪗','🎺','🪕','🎷'] },
-  { label: '🎨 Arts', emojis: ['🎨','✏️','🖌️','📝','✍️','📚','📖','📷','🎬','🎤','🎵','🎶','🎹','🎸','🎺','🎷','🥁','🪗','🎻','🪕','🎭','🎪','🖼️','🗿','📸'] },
-  { label: '🏃 Sport', emojis: ['🏃','🚴','🏊','🧘','🏋️','🧗','⚽','🏀','🏈','⚾','🎾','🏐','🏉','🎱','🏓','🏸','🥊','🥋','⛷️','🏂','🪂','🤸','🚵','🤾','🧜','🤼','🤺','🏇','🛹','🛼'] },
-  { label: '🌿 Nature', emojis: ['🌱','🌿','🍃','🌲','🌳','🌴','🌵','🌾','🍀','🌺','🌸','🌼','🌻','🌞','🌙','⭐','🌊','🏔️','🌋','🦋','🐝','🌈','🍄','🪴','🌍'] },
-  { label: '🍳 Food', emojis: ['🍳','🥘','🍲','🥗','🍱','🥐','🍞','🧁','🎂','🍰','🍪','🫖','☕','🍵','🧃','🥤','🍷','🍺','🧉','🫙','🥄','🔪','🍽️','🧑‍🍳','🛒'] },
-  { label: '💻 Tech', emojis: ['💻','📱','🖥️','⌨️','🖱️','🎮','🕹️','📡','🔭','🔬','🤖','⚙️','🔧','🔩','💡','🔋','📡','🖨️','📠','📺','📻','📼','💾','💿','📀'] },
-  { label: '🏠 Home', emojis: ['🏠','🛋️','🪴','🛁','🚿','🪥','🧹','🧺','🪣','🧴','🕯️','🪟','🚪','🧸','🪆','🎀','🧵','🧶','🪡','🪢','🛏️','🪑','🚽','🧼','🫧'] },
-  { label: '🧠 Mind', emojis: ['🧠','📿','🙏','🧘','💭','💡','📝','🗒️','📓','📔','📒','📕','📗','📘','📙','📚','🔍','🔎','💬','🗣️','👁️','✨','🌟','💫','🎯'] },
-];
-
-let _currentCat = 0;
-let _filteredEmojis = null;
-
-function openEmojiPicker() {
-  _filteredEmojis = null;
-  document.getElementById('emoji-search').value = '';
-  renderEmojiCats();
-  renderEmojiGrid();
-  document.getElementById('emoji-picker-overlay').style.display = 'flex';
-  setTimeout(() => document.getElementById('emoji-search').focus(), 100);
-}
-
-function closeEmojiPicker() {
-  document.getElementById('emoji-picker-overlay').style.display = 'none';
-}
-
-function closeEmojiPickerOutside(e) {
-  if (e.target.id === 'emoji-picker-overlay') closeEmojiPicker();
-}
-
-function renderEmojiCats() {
-  document.getElementById('emoji-cats').innerHTML = EMOJI_CATS.map((c,i) =>
-    `<button class="emoji-cat-btn ${i===_currentCat?'active':''}" onclick="selectEmojiCat(${i})">${c.label}</button>`
-  ).join('');
-}
-
-function selectEmojiCat(i) {
-  _currentCat = i;
-  _filteredEmojis = null;
-  document.getElementById('emoji-search').value = '';
-  renderEmojiCats();
-  renderEmojiGrid();
-}
-
-function filterEmoji(query) {
-  if (!query.trim()) {
-    _filteredEmojis = null;
-    renderEmojiCats();
-    renderEmojiGrid();
-    return;
+async function deleteActivity(id){
+  await sb.from('sessions').delete().eq('activity_id',id).eq('user_id',currentUserId);
+  const{error}=await sb.from('activities').delete().eq('id',id).eq('user_id',currentUserId);
+  if(!error){
+    activities=activities.filter(a=>a.id!==id);
+    todaySessions=todaySessions.filter(s=>s.activity_id!==id);
+    allSessions=allSessions.filter(s=>s.activity_id!==id);
+    renderManage();showToast('Activity removed');
   }
-  // Search across all categories
-  const all = EMOJI_CATS.flatMap(c => c.emojis);
-  _filteredEmojis = all;
-  renderEmojiGrid();
 }
 
-function renderEmojiGrid() {
-  const emojis = _filteredEmojis !== null ? _filteredEmojis : EMOJI_CATS[_currentCat].emojis;
-  document.getElementById('emoji-grid').innerHTML = emojis.map(e =>
-    `<div class="emoji-cell" onclick="selectEmoji('${e}')">${e}</div>`
-  ).join('');
+async function moveActivity(index,dir){
+  const ni=index+dir;if(ni<0||ni>=activities.length)return;
+  [activities[index],activities[ni]]=[activities[ni],activities[index]];
+  activities.forEach((a,i)=>a.sort_order=i);renderManage();
+  await Promise.all(activities.map(a=>sb.from('activities').update({sort_order:a.sort_order}).eq('id',a.id).eq('user_id',currentUserId)));
 }
 
-function selectEmoji(emoji) {
-  document.getElementById('new-emoji').value = emoji;
-  document.getElementById('new-emoji-btn').textContent = emoji;
-  closeEmojiPicker();
+// ── EDIT MODAL ────────────────────────────────────────────────────────────────
+function openEditModal(sessionId){
+  const s=allSessions.find(x=>x.id===sessionId);if(!s)return;
+  const act=activities.find(a=>a.id===s.activity_id);if(!act)return;
+  _editSessionId=sessionId;_editEnough=s.enough;_editMood=s.mood;
+  const dt=new Date(s.created_at);
+  document.getElementById('edit-modal-title').textContent=act.emoji+' '+act.name;
+  document.getElementById('edit-modal-meta').textContent=dt.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})+' · '+fmtMins(s.duration);
+  document.getElementById('edit-enough-btn').textContent=_editEnough?'Enough ✓':'Not enough';
+  document.getElementById('edit-enough-btn').className='toggle-btn'+(_editEnough?' on':'');
+  renderEditMoods();
+  document.getElementById('edit-modal').style.display='flex';
 }
+function renderEditMoods(){
+  const moods=[{id:'flow',label:'😌 Flow'},{id:'good',label:'🙂 Good'},{id:'meh',label:'😶 Meh'},{id:'guilt',label:'😬 Guilt'}];
+  document.getElementById('edit-mood-btns').innerHTML=moods.map(m=>`<button class="mood-pill ${_editMood===m.id?'selected':''}" onclick="setEditMood('${m.id}')">${m.label}</button>`).join('');
+}
+function setEditMood(mood){_editMood=_editMood===mood?null:mood;renderEditMoods();}
+function toggleEditEnough(){_editEnough=!_editEnough;document.getElementById('edit-enough-btn').textContent=_editEnough?'Enough ✓':'Not enough';document.getElementById('edit-enough-btn').className='toggle-btn'+(_editEnough?' on':'');}
+async function saveEditSession(){
+  const idx=allSessions.findIndex(s=>s.id===_editSessionId);if(idx===-1)return;
+  await sb.from('sessions').update({enough:_editEnough,mood:_editMood}).eq('id',_editSessionId);
+  allSessions[idx].enough=_editEnough;allSessions[idx].mood=_editMood;
+  todaySessions=allSessions.filter(s=>s.date===todayStr());
+  document.getElementById('edit-modal').style.display='none';
+  showToast('Entry updated');renderInsights();renderToday();
+}
+async function deleteEditSession(){
+  await sb.from('sessions').delete().eq('id',_editSessionId);
+  allSessions=allSessions.filter(s=>s.id!==_editSessionId);
+  todaySessions=allSessions.filter(s=>s.date===todayStr());
+  document.getElementById('edit-modal').style.display='none';
+  showToast('Entry deleted');renderInsights();renderToday();
+}
+function closeEditModal(e){if(e.target.id==='edit-modal')document.getElementById('edit-modal').style.display='none';}
 
-// ── INIT ──────────────────────────────────────────────────────────────────────
-getStore();
+// ── EMOJI PICKER ──────────────────────────────────────────────────────────────
+function openEmojiPicker(){_filteredEmojis=null;document.getElementById('emoji-search').value='';renderEmojiCats();renderEmojiGrid();document.getElementById('emoji-picker-overlay').style.display='flex';}
+function closeEmojiPicker(){document.getElementById('emoji-picker-overlay').style.display='none';}
+function closeEmojiPickerOutside(e){if(e.target.id==='emoji-picker-overlay')closeEmojiPicker();}
+function renderEmojiCats(){document.getElementById('emoji-cats').innerHTML=EMOJI_CATS.map((c,i)=>`<button class="emoji-cat-btn ${i===_currentEmojiCat?'active':''}" onclick="selectEmojiCat(${i})">${c.label}</button>`).join('');}
+function selectEmojiCat(i){_currentEmojiCat=i;_filteredEmojis=null;document.getElementById('emoji-search').value='';renderEmojiCats();renderEmojiGrid();}
+function filterEmoji(q){_filteredEmojis=q.trim()?EMOJI_CATS.flatMap(c=>c.emojis):null;renderEmojiGrid();}
+function renderEmojiGrid(){const emojis=_filteredEmojis||EMOJI_CATS[_currentEmojiCat].emojis;document.getElementById('emoji-grid').innerHTML=emojis.map(e=>`<div class="emoji-cell" onclick="selectEmoji('${e}')">${e}</div>`).join('');}
+function selectEmoji(emoji){document.getElementById('new-emoji').value=emoji;document.getElementById('new-emoji-btn').textContent=emoji;closeEmojiPicker();}
 
-// Restore any active session that was interrupted
-(function restoreSession() {
-  try {
-    const saved = localStorage.getItem('findEnough_activeSession');
-    if (!saved) { renderToday(); return; }
-    const { activityId, startTime } = JSON.parse(saved);
-    const d = getStore();
-    const act = d.activities.find(a => a.id === activityId);
-    if (!act) { localStorage.removeItem('findEnough_activeSession'); renderToday(); return; }
-    // Restore session state with original start time
-    sessionActivityId = activityId;
-    sessionStart = startTime;
-    sessionSeconds = Math.floor((Date.now() - startTime) / 1000);
-    sessionMood = null;
-    nudgeShown = sessionSeconds >= 300;
-    const color = COLORS.find(c => c.id === act.colorId) || COLORS[0];
-    document.getElementById('session-icon-big').style.background = color.bg;
-    document.getElementById('session-icon-big').textContent = act.emoji;
-    document.getElementById('session-name').textContent = act.name;
-    document.getElementById('nudge-card').style.display = nudgeShown ? 'block' : 'none';
-    document.getElementById('confirm-end').style.display = 'none';
-    document.getElementById('session-actions').style.display = 'flex';
-    // Start timer ticking from restored time
-    clearInterval(timerInterval);
-    timerInterval = setInterval(() => {
-      sessionSeconds = Math.floor((Date.now() - sessionStart) / 1000);
-      document.getElementById('timer-display').textContent = fmtTime(sessionSeconds);
-      if (!nudgeShown && sessionSeconds >= 300) {
-        document.getElementById('nudge-card').style.display = 'block';
-        nudgeShown = true;
-      }
-    }, 1000);
-    document.getElementById('timer-display').textContent = fmtTime(sessionSeconds);
-    // Go straight to session screen
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    document.getElementById('screen-session').classList.add('active');
-    document.getElementById('nav-today').classList.add('active');
-  } catch(e) {
-    localStorage.removeItem('findEnough_activeSession');
-    renderToday();
+// ── BOOT ──────────────────────────────────────────────────────────────────────
+(function boot(){
+  const savedUserId=localStorage.getItem('findEnough_userId');
+  const savedPassphrase=localStorage.getItem('findEnough_passphrase');
+  if(savedUserId&&savedPassphrase&&PASSPHRASES[savedPassphrase]===savedUserId){
+    currentUserId=savedUserId;currentPassphrase=savedPassphrase;
+    initApp();
+  } else {
+    document.getElementById('loading-screen').style.display='none';
+    document.getElementById('auth-screen').style.display='flex';
   }
 })();
 </script>
