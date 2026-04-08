@@ -356,6 +356,8 @@ function startSession(id) {
   const todaySess=d.sessions.filter(s=>s.date===todayStr());
   if(todaySess.some(s=>s.activityId===id&&s.enough)){showToast(`You've already found enough ${act.name} today 🌿`);return;}
   sessionActivityId=id; sessionStart=Date.now(); sessionSeconds=0; sessionMood=null; nudgeShown=false;
+  // Persist active session so timer survives app close
+  localStorage.setItem('findEnough_activeSession', JSON.stringify({activityId:id, startTime:sessionStart}));
   const color=COLORS.find(c=>c.id===act.colorId)||COLORS[0];
   document.getElementById('session-icon-big').style.background=color.bg;
   document.getElementById('session-icon-big').textContent=act.emoji;
@@ -421,6 +423,7 @@ function endSession(markEnough) {
     if(markEnough) showToast('Enough found. Well done 🌿');
   }
   sessionActivityId=null; sessionSeconds=0;
+  localStorage.removeItem('findEnough_activeSession');
   showScreen('today');
 }
 
@@ -533,7 +536,50 @@ function moveActivity(index,dir) {
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 getStore();
-renderToday();
+
+// Restore any active session that was interrupted
+(function restoreSession() {
+  try {
+    const saved = localStorage.getItem('findEnough_activeSession');
+    if (!saved) { renderToday(); return; }
+    const { activityId, startTime } = JSON.parse(saved);
+    const d = getStore();
+    const act = d.activities.find(a => a.id === activityId);
+    if (!act) { localStorage.removeItem('findEnough_activeSession'); renderToday(); return; }
+    // Restore session state with original start time
+    sessionActivityId = activityId;
+    sessionStart = startTime;
+    sessionSeconds = Math.floor((Date.now() - startTime) / 1000);
+    sessionMood = null;
+    nudgeShown = sessionSeconds >= 300;
+    const color = COLORS.find(c => c.id === act.colorId) || COLORS[0];
+    document.getElementById('session-icon-big').style.background = color.bg;
+    document.getElementById('session-icon-big').textContent = act.emoji;
+    document.getElementById('session-name').textContent = act.name;
+    document.getElementById('nudge-card').style.display = nudgeShown ? 'block' : 'none';
+    document.getElementById('confirm-end').style.display = 'none';
+    document.getElementById('session-actions').style.display = 'flex';
+    // Start timer ticking from restored time
+    clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+      sessionSeconds = Math.floor((Date.now() - sessionStart) / 1000);
+      document.getElementById('timer-display').textContent = fmtTime(sessionSeconds);
+      if (!nudgeShown && sessionSeconds >= 300) {
+        document.getElementById('nudge-card').style.display = 'block';
+        nudgeShown = true;
+      }
+    }, 1000);
+    document.getElementById('timer-display').textContent = fmtTime(sessionSeconds);
+    // Go straight to session screen
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('screen-session').classList.add('active');
+    document.getElementById('nav-today').classList.add('active');
+  } catch(e) {
+    localStorage.removeItem('findEnough_activeSession');
+    renderToday();
+  }
+})();
 </script>
 </body>
 </html>
