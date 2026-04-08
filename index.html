@@ -176,10 +176,22 @@
         <button class="mood-btn" onclick="selectMood('guilt')" id="mood-guilt"><span class="mood-emoji">😬</span><span class="mood-label">Guilt</span></button>
       </div>
     </div>
-    <div class="session-actions">
-      <button class="btn-enough" onclick="endSession(true)">✓ That's enough for today</button>
+    <!-- Confirm end panel — shown when user taps a stop button -->
+    <div id="confirm-end" style="display:none; width:100%; background:var(--bg2); border-radius:var(--radius); padding:16px; margin-bottom:20px;">
+      <div style="font-size:13px; color:var(--text2); margin-bottom:10px; text-align:center; font-style:italic;">How did that feel?</div>
+      <div class="mood-row" style="margin-bottom:14px;">
+        <button class="mood-btn" onclick="selectEndMood('flow')" id="end-mood-flow"><span class="mood-emoji">😌</span><span class="mood-label">Flow</span></button>
+        <button class="mood-btn" onclick="selectEndMood('good')" id="end-mood-good"><span class="mood-emoji">🙂</span><span class="mood-label">Good</span></button>
+        <button class="mood-btn" onclick="selectEndMood('meh')" id="end-mood-meh"><span class="mood-emoji">😶</span><span class="mood-label">Meh</span></button>
+        <button class="mood-btn" onclick="selectEndMood('guilt')" id="end-mood-guilt"><span class="mood-emoji">😬</span><span class="mood-label">Guilt</span></button>
+      </div>
+      <button class="btn-enough" id="confirm-enough-btn" onclick="confirmEnd()">✓ That's enough for today</button>
+      <button class="btn-stop" id="confirm-stop-btn" onclick="confirmEnd()" style="margin-top:10px; display:none;">Stop without marking enough</button>
+    </div>
+    <div class="session-actions" id="session-actions">
+      <button class="btn-enough" onclick="promptEnd(true)">✓ That's enough for today</button>
       <button class="btn-remind" onclick="snoozeReminder()">Remind me in 30 min</button>
-      <button class="btn-stop" onclick="endSession(false)">Stop without marking enough</button>
+      <button class="btn-stop" onclick="promptEnd(false)">Stop without marking enough</button>
     </div>
   </div>
 </div>
@@ -349,7 +361,10 @@ function startSession(id) {
   document.getElementById('session-icon-big').textContent=act.emoji;
   document.getElementById('session-name').textContent=act.name;
   document.getElementById('nudge-card').style.display='none';
+  document.getElementById('confirm-end').style.display='none';
+  document.getElementById('session-actions').style.display='flex';
   document.querySelectorAll('.mood-btn').forEach(b=>b.classList.remove('selected'));
+  document.querySelectorAll('[id^="end-mood-"]').forEach(b=>b.classList.remove('selected'));
   showScreen('session');
   document.getElementById('nav-today').classList.add('active');
   clearInterval(timerInterval);
@@ -364,6 +379,31 @@ function selectMood(mood) {
   sessionMood=mood;
   document.querySelectorAll('.mood-btn').forEach(b=>b.classList.remove('selected'));
   document.getElementById('mood-'+mood).classList.add('selected');
+}
+
+let _pendingEnough = false;
+function promptEnd(markEnough) {
+  _pendingEnough = markEnough;
+  // Reset end mood buttons
+  document.querySelectorAll('[id^="end-mood-"]').forEach(b=>b.classList.remove('selected'));
+  sessionMood = null;
+  // Show correct confirm button
+  document.getElementById('confirm-enough-btn').style.display = markEnough ? 'block' : 'none';
+  document.getElementById('confirm-stop-btn').style.display = markEnough ? 'none' : 'block';
+  // Swap panels
+  document.getElementById('session-actions').style.display = 'none';
+  document.getElementById('nudge-card').style.display = 'none';
+  document.getElementById('confirm-end').style.display = 'block';
+}
+
+function selectEndMood(mood) {
+  sessionMood = mood;
+  document.querySelectorAll('[id^="end-mood-"]').forEach(b=>b.classList.remove('selected'));
+  document.getElementById('end-mood-'+mood).classList.add('selected');
+}
+
+function confirmEnd() {
+  endSession(_pendingEnough);
 }
 
 function snoozeReminder() {
