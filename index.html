@@ -591,11 +591,23 @@ async function moveActivity(index,dir){
 // INIT
 async function initApp(user){
   currentUser=user;
-  await loadData();
+  setLoadingMsg('Signed in! Loading data…');
+  try {
+    await loadData();
+    setLoadingMsg('Data loaded! Starting app…');
+  } catch(e) {
+    setLoadingMsg('Error loading data: ' + e.message);
+    return;
+  }
   document.getElementById('loading-screen').style.display='none';
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('app').classList.add('ready');
   showScreen('today');
+}
+
+function setLoadingMsg(msg) {
+  document.getElementById('loading-text').textContent = msg;
+  console.log('[FindEnough]', msg);
 }
 // iOS-safe startup: use getSession() first, fall back to onAuthStateChange
 let _appStarted = false;
