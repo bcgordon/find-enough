@@ -641,14 +641,15 @@ async function bootApp() {
 
 // Also handle sign-in / sign-out events after initial boot
 sb.auth.onAuthStateChange(async(event, session) => {
-  if (event === 'SIGNED_IN' && session?.user && !_appStarted) {
-    _appStarted = true;
-    clearTimeout(_initTimeout);
+  if (event === 'SIGNED_IN' && session?.user) {
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('loading-screen').style.display = 'flex';
+    document.getElementById('loading-spinner').style.display = 'block';
+    document.getElementById('loading-text').textContent = 'loading…';
     await initApp(session.user);
   } else if (event === 'SIGNED_OUT') {
     currentUser = null; activities = []; todaySessions = []; allSessions = [];
+    _appStarted = false;
     document.getElementById('app').classList.remove('ready');
     document.getElementById('auth-screen').style.display = 'flex';
   }
