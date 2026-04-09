@@ -723,7 +723,10 @@ async function renderToday(){
   // Force todaySessions to strictly today — belt and suspenders
   const _today = todayStr();
   todaySessions = allSessions.filter(s => s.date === _today);
-  console.log('[FindEnough] today:', _today, 'todaySessions:', todaySessions.length, todaySessions.map(s=>s.date));
+  console.log('[FindEnough] today:', _today);
+  console.log('[FindEnough] todaySessions count:', todaySessions.length);
+  console.log('[FindEnough] todaySessions dates:', todaySessions.map(s=>s.date+' | '+s.duration+'s | activity:'+s.activity_id.slice(0,8)));
+  console.log('[FindEnough] allSessions sample:', allSessions.slice(0,5).map(s=>s.date+' | '+s.duration+'s'));
   document.getElementById('today-date').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
   const enoughIds=new Set(todaySessions.filter(s=>s.enough).map(s=>s.activity_id));
   const enoughCount=activities.filter(a=>enoughIds.has(a.id)).length;
