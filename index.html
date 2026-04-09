@@ -620,6 +620,18 @@ let _editActReminderTime=null, _editActReminderFreq=0;
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 function todayStr(){return new Date().toISOString().slice(0,10);}
+let _lastRenderedDate = null;
+
+async function checkDayRollover(){
+  const today = todayStr();
+  if(_lastRenderedDate && _lastRenderedDate !== today){
+    // Day has changed — refresh sessions from Supabase
+    const{data:sess}=await sb.from('sessions').select('*').eq('user_id',currentUserId).order('created_at',{ascending:false});
+    allSessions=sess||[];
+    todaySessions=allSessions.filter(s=>s.date===today);
+  }
+  _lastRenderedDate = today;
+}
 function fmtTime(s){const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;return h>0?`${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`:`${m}:${String(sec).padStart(2,'0')}`;}
 function fmtMins(s){if(s<60)return s+'s';const m=Math.round(s/60);if(m<60)return m+' min';const h=Math.floor(m/60),r=m%60;return r?`${h}h ${r}m`:`${h}h`;}
 function fmtRemTime(t){if(!t)return'';const[h,m]=t.split(':').map(Number);const ampm=h>=12?'PM':'AM';const h12=h%12||12;return`${h12}:${String(m).padStart(2,'0')} ${ampm}`;}
@@ -697,7 +709,8 @@ function showScreen(name){
 }
 
 // ── TODAY ─────────────────────────────────────────────────────────────────────
-function renderToday(){
+async function renderToday(){
+  await checkDayRollover();
   document.getElementById('today-date').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
   const enoughIds=new Set(todaySessions.filter(s=>s.enough).map(s=>s.activity_id));
   const enoughCount=activities.filter(a=>enoughIds.has(a.id)).length;
