@@ -99,9 +99,11 @@
   .dot.on{background:var(--purple);}.dot.enough{background:var(--green);}
 
   /* BOTTOM NAV */
-  .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:rgba(247,244,239,0.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-top:1px solid var(--border);display:flex;padding-bottom:var(--safe-bottom);z-index:100;}
+  .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:var(--bg);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-top:1px solid var(--border);display:flex;padding-bottom:var(--safe-bottom);z-index:100;}
   .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 0 8px;cursor:pointer;gap:3px;}
-  .nav-icon{font-size:20px;}.nav-label{font-size:10px;color:var(--text3);}
+  .nav-icon{font-size:20px;filter:grayscale(0.3);opacity:0.5;}
+  .nav-label{font-size:10px;color:var(--text3);}
+  .nav-item.active .nav-icon{opacity:1;filter:none;}
   .nav-item.active .nav-label{color:var(--text);font-weight:500;}
 
   /* SESSION */
