@@ -180,6 +180,12 @@
   .nudge-opt{padding:6px 12px;border-radius:20px;border:1px solid var(--border);background:var(--bg2);font-size:12px;color:var(--text2);cursor:pointer;font-family:'DM Sans',sans-serif;}
   .nudge-opt.active{background:var(--text);color:var(--bg);border-color:var(--text);}
   .signout-btn{width:100%;background:transparent;color:var(--text3);border:1px solid var(--border);border-radius:14px;padding:12px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;margin-top:8px;}
+  .reminder-card{background:var(--amber-light);border:1px solid rgba(200,119,26,0.25);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:12px;}
+  .reminder-card-body{flex:1;}
+  .reminder-card-title{font-size:14px;font-weight:500;color:var(--amber);}
+  .reminder-card-text{font-size:12px;color:var(--amber);opacity:0.8;margin-top:2px;line-height:1.4;}
+  input[type="time"]{color-scheme:light;}
+  body.dark input[type="time"]{color-scheme:dark;}
 
   /* ABOUT */
   .about-scroll{flex:1;overflow-y:auto;padding:8px 20px 16px;-webkit-overflow-scrolling:touch;}
@@ -482,7 +488,7 @@
 
 <!-- EDIT ACTIVITY MODAL -->
 <div class="modal-overlay" id="edit-activity-modal" style="display:none" onclick="closeEditActivityModal(event)">
-  <div class="modal-sheet">
+  <div class="modal-sheet" style="max-height:85vh;overflow-y:auto;">
     <div class="modal-title">Edit activity</div>
     <div style="display:flex;gap:8px;margin-bottom:10px;margin-top:16px;">
       <button class="form-input emoji-input" id="edit-act-emoji-btn" onclick="openEmojiPickerForEdit()" style="cursor:pointer;font-size:26px;display:flex;align-items:center;justify-content:center;">🌟</button>
@@ -499,6 +505,27 @@
         <button class="nudge-opt" data-mins="60" onclick="selectEditNudge(60)">60 min</button>
         <button class="nudge-opt" data-mins="90" onclick="selectEditNudge(90)">90 min</button>
       </div>
+    </div>
+    <div style="margin-bottom:16px;">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:6px;">Daily reminder time <span style="font-style:italic;opacity:0.7">(optional)</span></div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <input type="time" class="form-input" id="edit-reminder-time" style="flex:1;max-width:140px;">
+        <button onclick="clearReminderTime()" style="font-size:12px;color:var(--text3);background:none;border:none;cursor:pointer;padding:4px;">Clear</button>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px;line-height:1.5;">When you open the app after this time and haven't done this activity yet, you'll see a gentle nudge.</div>
+    </div>
+    <div style="margin-bottom:16px;">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:6px;">Weekly frequency goal <span style="font-style:italic;opacity:0.7">(optional)</span></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;" id="edit-freq-picker">
+        <button class="nudge-opt" data-freq="0" onclick="selectEditFreq(0)">None</button>
+        <button class="nudge-opt" data-freq="1" onclick="selectEditFreq(1)">1×</button>
+        <button class="nudge-opt" data-freq="2" onclick="selectEditFreq(2)">2×</button>
+        <button class="nudge-opt" data-freq="3" onclick="selectEditFreq(3)">3×</button>
+        <button class="nudge-opt" data-freq="4" onclick="selectEditFreq(4)">4×</button>
+        <button class="nudge-opt" data-freq="5" onclick="selectEditFreq(5)">5×</button>
+        <button class="nudge-opt" data-freq="7" onclick="selectEditFreq(7)">Daily</button>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px;line-height:1.5;">If you're falling behind on this goal, a nudge will appear on your Today screen.</div>
     </div>
     <button class="modal-close" onclick="saveEditActivity()">Save changes</button>
   </div>
@@ -589,11 +616,13 @@ let _pendingEnough=false, _editSessionId=null, _editEnough=false, _editMood=null
 let _currentEmojiCat=0, _filteredEmojis=null;
 let selectedNudgeMins=15;
 let _editForActivity=false, _editActId=null, _editActColorId='purple', _editActNudgeMins=30;
+let _editActReminderTime=null, _editActReminderFreq=0;
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 function todayStr(){return new Date().toISOString().slice(0,10);}
 function fmtTime(s){const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;return h>0?`${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`:`${m}:${String(sec).padStart(2,'0')}`;}
 function fmtMins(s){if(s<60)return s+'s';const m=Math.round(s/60);if(m<60)return m+' min';const h=Math.floor(m/60),r=m%60;return r?`${h}h ${r}m`:`${h}h`;}
+function fmtRemTime(t){if(!t)return'';const[h,m]=t.split(':').map(Number);const ampm=h>=12?'PM':'AM';const h12=h%12||12;return`${h12}:${String(m).padStart(2,'0')} ${ampm}`;}
 let _tt;
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(_tt);_tt=setTimeout(()=>t.classList.remove('show'),2800);}
 
@@ -683,9 +712,45 @@ function renderToday(){
   document.getElementById('balance-chips').innerHTML=activities.map(a=>
     `<span class="balance-chip ${enoughIds.has(a.id)?'done':''}">${a.emoji} ${a.name}</span>`
   ).join('');
+  // Build reminder nudges
+  const now=new Date();
+  const currentTime=now.getHours()*60+now.getMinutes();
+  const dayOfWeek=now.getDay();
+  const weekStart=new Date(now);weekStart.setDate(now.getDate()-dayOfWeek);
+  const weekDays=Array.from({length:7},(_,i)=>{const d=new Date(weekStart);d.setDate(weekStart.getDate()+i);return d.toISOString().slice(0,10);});
+  const reminders=[];
+  activities.forEach(a=>{
+    // Time-based reminder
+    if(a.reminder_time){
+      const[rh,rm]=a.reminder_time.split(':').map(Number);
+      const reminderMins=rh*60+rm;
+      const doneTodayAlready=todaySessions.some(s=>s.activity_id===a.id);
+      if(currentTime>=reminderMins&&!doneTodayAlready){
+        reminders.push({activity:a,type:'time',msg:`You set a reminder for ${fmtRemTime(a.reminder_time)} — there's still time today.`});
+      }
+    }
+    // Frequency-based reminder
+    if(a.reminder_freq&&a.reminder_freq>0){
+      const doneThisWeek=new Set(allSessions.filter(s=>s.activity_id===a.id&&weekDays.includes(s.date)).map(s=>s.date)).size;
+      const daysLeft=6-dayOfWeek;
+      const needed=a.reminder_freq-doneThisWeek;
+      if(needed>0&&needed>daysLeft){
+        reminders.push({activity:a,type:'freq',msg:`Goal: ${a.reminder_freq}× this week. Done ${doneThisWeek} so far — ${needed} more to go.`});
+      }
+    }
+  });
+  const reminderHTML=reminders.length>0?`<div style="margin-bottom:4px">${reminders.map(r=>`
+    <div class="reminder-card" onclick="startSession('${r.activity.id}')">
+      <div style="font-size:24px">${r.activity.emoji}</div>
+      <div class="reminder-card-body">
+        <div class="reminder-card-title">${r.activity.name}</div>
+        <div class="reminder-card-text">${r.msg}</div>
+      </div>
+    </div>`).join('')}</div>`:'';
+
   const list=document.getElementById('activity-list');
   if(activities.length===0){list.innerHTML='<div class="empty-state"><div class="empty-text">No activities yet.<br>Go to Manage to add some.</div></div>';return;}
-  list.innerHTML=activities.map(a=>{
+  list.innerHTML=reminderHTML+activities.map(a=>{
     const actS=todaySessions.filter(s=>s.activity_id===a.id);
     const isEnough=enoughIds.has(a.id),isActive=sessionActivityId===a.id;
     const totalSec=actS.reduce((sum,s)=>sum+(s.duration||0),0)+(isActive?sessionSeconds:0);
@@ -1090,6 +1155,12 @@ function openEditActivity(id){
   document.querySelectorAll('#edit-nudge-picker .nudge-opt').forEach(b=>{
     b.classList.toggle('active',parseInt(b.dataset.mins)===_editActNudgeMins);
   });
+  _editActReminderTime=act.reminder_time||null;
+  _editActReminderFreq=act.reminder_freq||0;
+  document.getElementById('edit-reminder-time').value=_editActReminderTime||'';
+  document.querySelectorAll('#edit-freq-picker .nudge-opt').forEach(b=>{
+    b.classList.toggle('active',parseInt(b.dataset.freq)===_editActReminderFreq);
+  });
   document.getElementById('edit-activity-modal').style.display='flex';
 }
 function selectEditActColor(id){
@@ -1099,6 +1170,16 @@ function selectEditActColor(id){
   ).join('');
 }
 function closeEditActivityModal(e){if(e.target.id==='edit-activity-modal')document.getElementById('edit-activity-modal').style.display='none';}
+function selectEditFreq(freq){
+  _editActReminderFreq=freq;
+  document.querySelectorAll('#edit-freq-picker .nudge-opt').forEach(b=>{
+    b.classList.toggle('active',parseInt(b.dataset.freq)===freq);
+  });
+}
+function clearReminderTime(){
+  _editActReminderTime=null;
+  document.getElementById('edit-reminder-time').value='';
+}
 function openEmojiPickerForEdit(){
   _editForActivity=true;
   openEmojiPicker();
@@ -1107,10 +1188,12 @@ async function saveEditActivity(){
   const name=document.getElementById('edit-act-name').value.trim();
   const emoji=document.getElementById('edit-act-emoji').value||'⭐';
   if(!name){showToast('Please enter a name');return;}
-  const{error}=await sb.from('activities').update({name,emoji,color_id:_editActColorId,nudge_minutes:_editActNudgeMins}).eq('id',_editActId).eq('user_id',currentUserId);
+  const timeVal=document.getElementById('edit-reminder-time').value||null;
+  _editActReminderTime=timeVal;
+  const{error}=await sb.from('activities').update({name,emoji,color_id:_editActColorId,nudge_minutes:_editActNudgeMins,reminder_time:_editActReminderTime,reminder_freq:_editActReminderFreq||null}).eq('id',_editActId).eq('user_id',currentUserId);
   if(!error){
     const idx=activities.findIndex(a=>a.id===_editActId);
-    if(idx>-1){activities[idx]={...activities[idx],name,emoji,color_id:_editActColorId,nudge_minutes:_editActNudgeMins};}
+    if(idx>-1){activities[idx]={...activities[idx],name,emoji,color_id:_editActColorId,nudge_minutes:_editActNudgeMins,reminder_time:_editActReminderTime,reminder_freq:_editActReminderFreq||null};}
     document.getElementById('edit-activity-modal').style.display='none';
     renderManage();renderToday();showToast('Activity updated');
   } else showToast('Error saving — check your connection');
