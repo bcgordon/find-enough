@@ -624,19 +624,19 @@ let _lastRenderedDate = null;
 
 async function checkDayRollover(){
   const today = todayStr();
-  if(_lastRenderedDate !== today){
-    // Day has changed or first render — always resync todaySessions to today only
-    todaySessions = allSessions.filter(s=>s.date===today);
-    // If day actually rolled over (not just first load), also clear any stale active session
-    if(_lastRenderedDate && _lastRenderedDate !== today){
-      localStorage.removeItem('findEnough_activeSession');
-      if(sessionActivityId){
-        clearInterval(timerInterval);
-        sessionActivityId=null;sessionSeconds=0;currentActivity=null;
-      }
-    }
-    _lastRenderedDate = today;
+  // Always filter todaySessions to only today — regardless of what's cached
+  todaySessions = allSessions.filter(s=>s.date===today);
+  if(_lastRenderedDate && _lastRenderedDate !== today){
+    // Day has rolled over — do a full fresh fetch from Supabase
+    try {
+      const{data:sess}=await sb.from('sessions').select('*').eq('user_id',currentUserId).order('created_at',{ascending:false});
+      if(sess){ allSessions=sess; todaySessions=allSessions.filter(s=>s.date===today); }
+    } catch(e){}
+    // Clear any stale active session from yesterday
+    localStorage.removeItem('findEnough_activeSession');
+    if(sessionActivityId){ clearInterval(timerInterval); sessionActivityId=null; sessionSeconds=0; currentActivity=null; }
   }
+  _lastRenderedDate = today;
 }
 function fmtTime(s){const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;return h>0?`${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`:`${m}:${String(sec).padStart(2,'0')}`;}
 function fmtMins(s){if(s<60)return s+'s';const m=Math.round(s/60);if(m<60)return m+' min';const h=Math.floor(m/60),r=m%60;return r?`${h}h ${r}m`:`${h}h`;}
@@ -717,6 +717,10 @@ function showScreen(name){
 // ── TODAY ─────────────────────────────────────────────────────────────────────
 async function renderToday(){
   await checkDayRollover();
+  // Force todaySessions to strictly today — belt and suspenders
+  const _today = todayStr();
+  todaySessions = allSessions.filter(s => s.date === _today);
+  console.log('[FindEnough] today:', _today, 'todaySessions:', todaySessions.length, todaySessions.map(s=>s.date));
   document.getElementById('today-date').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
   const enoughIds=new Set(todaySessions.filter(s=>s.enough).map(s=>s.activity_id));
   const enoughCount=activities.filter(a=>enoughIds.has(a.id)).length;
