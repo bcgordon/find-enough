@@ -619,7 +619,10 @@ let _editForActivity=false, _editActId=null, _editActColorId='purple', _editActN
 let _editActReminderTime=null, _editActReminderFreq=0;
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
-function todayStr(){return new Date().toISOString().slice(0,10);}
+function todayStr(){
+  const d=new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
 let _lastRenderedDate = null;
 
 async function checkDayRollover(){
