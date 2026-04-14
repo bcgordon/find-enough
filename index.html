@@ -556,6 +556,15 @@
       <span class="modal-label">How it felt</span>
       <div class="modal-btns" id="edit-mood-btns"></div>
     </div>
+    <div class="modal-row">
+      <span class="modal-label">Duration</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <input type="number" id="edit-duration-hrs" min="0" max="23" style="width:52px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-size:14px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;text-align:center;">
+        <span style="font-size:13px;color:var(--text3)">h</span>
+        <input type="number" id="edit-duration-mins" min="0" max="59" style="width:52px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-size:14px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;text-align:center;">
+        <span style="font-size:13px;color:var(--text3)">min</span>
+      </div>
+    </div>
     <button class="modal-close" onclick="saveEditSession()">Save changes</button>
     <button class="modal-delete" onclick="deleteEditSession()">Delete this entry</button>
   </div>
@@ -579,6 +588,11 @@ const PASSPHRASES = {
   'daiquiri-stone-5':  'user_daiquiri',
   'gimlet-rain-2':     'user_gimlet',
   'sidecar-moss-9':    'user_sidecar',
+  'cosmo-pine-6':      'user_cosmo',
+  'aperol-stone-1':    'user_aperol',
+  'bellini-creek-8':   'user_bellini',
+  'mojito-fern-4':     'user_mojito',
+  'bramble-dusk-2':    'user_bramble',
 };
 
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
@@ -612,7 +626,7 @@ let selectedColorId='purple', currentInsightTab='7d';
 let timerInterval=null, sessionStart=null;
 let sessionActivityId=null, sessionMood=null, currentActivity=null;
 let sessionSeconds=0, nudgeShown=false, reminderTimeout=null;
-let _pendingEnough=false, _editSessionId=null, _editEnough=false, _editMood=null;
+let _pendingEnough=false, _editSessionId=null, _editEnough=false, _editMood=null, _editDuration=0;
 let _currentEmojiCat=0, _filteredEmojis=null;
 let selectedNudgeMins=15;
 let _editForActivity=false, _editActId=null, _editActColorId='purple', _editActNudgeMins=30;
@@ -1080,12 +1094,17 @@ async function moveActivity(index,dir){
 function openEditModal(sessionId){
   const s=allSessions.find(x=>x.id===sessionId);if(!s)return;
   const act=activities.find(a=>a.id===s.activity_id);if(!act)return;
-  _editSessionId=sessionId;_editEnough=s.enough;_editMood=s.mood;
+  _editSessionId=sessionId;_editEnough=s.enough;_editMood=s.mood;_editDuration=s.duration||0;
   const dt=new Date(s.created_at);
   document.getElementById('edit-modal-title').textContent=act.emoji+' '+act.name;
   document.getElementById('edit-modal-meta').textContent=dt.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})+' · '+fmtMins(s.duration);
   document.getElementById('edit-enough-btn').textContent=_editEnough?'Enough ✓':'Not enough';
   document.getElementById('edit-enough-btn').className='toggle-btn'+(_editEnough?' on':'');
+  // Populate duration fields
+  const durH=Math.floor(_editDuration/3600);
+  const durM=Math.floor((_editDuration%3600)/60);
+  document.getElementById('edit-duration-hrs').value=durH;
+  document.getElementById('edit-duration-mins').value=durM;
   renderEditMoods();
   document.getElementById('edit-modal').style.display='flex';
 }
@@ -1097,8 +1116,11 @@ function setEditMood(mood){_editMood=_editMood===mood?null:mood;renderEditMoods(
 function toggleEditEnough(){_editEnough=!_editEnough;document.getElementById('edit-enough-btn').textContent=_editEnough?'Enough ✓':'Not enough';document.getElementById('edit-enough-btn').className='toggle-btn'+(_editEnough?' on':'');}
 async function saveEditSession(){
   const idx=allSessions.findIndex(s=>s.id===_editSessionId);if(idx===-1)return;
-  await sb.from('sessions').update({enough:_editEnough,mood:_editMood}).eq('id',_editSessionId);
-  allSessions[idx].enough=_editEnough;allSessions[idx].mood=_editMood;
+  const hrs=parseInt(document.getElementById('edit-duration-hrs').value)||0;
+  const mins=parseInt(document.getElementById('edit-duration-mins').value)||0;
+  const newDuration=(hrs*3600)+(mins*60);
+  await sb.from('sessions').update({enough:_editEnough,mood:_editMood,duration:newDuration}).eq('id',_editSessionId);
+  allSessions[idx].enough=_editEnough;allSessions[idx].mood=_editMood;allSessions[idx].duration=newDuration;
   todaySessions=allSessions.filter(s=>s.date===todayStr());
   document.getElementById('edit-modal').style.display='none';
   showToast('Entry updated');renderInsights();renderToday();
