@@ -812,6 +812,12 @@ async function renderToday(){
 function startSession(id){
   const act=activities.find(a=>a.id===id);if(!act)return;
   if(todaySessions.some(s=>s.activity_id===id&&s.enough)){showToast(`You've already found enough ${act.name} today 🌿`);return;}
+  // Already tracking this activity — just return to session screen without resetting
+  if(sessionActivityId===id){
+    showScreen('session');
+    document.getElementById('nav-today').classList.add('active');
+    return;
+  }
   sessionActivityId=id;sessionStart=Date.now();sessionSeconds=0;sessionMood=null;nudgeShown=false;
   currentActivity=act;
   localStorage.setItem('findEnough_activeSession',JSON.stringify({activityId:id,startTime:sessionStart}));
