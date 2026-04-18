@@ -23,6 +23,7 @@
     --border:rgba(42,37,32,0.10);--radius:18px;
     --safe-top:env(safe-area-inset-top,0px);
     --safe-bottom:env(safe-area-inset-bottom,0px);
+    --accent:#2A2520;--accent-light:#E4DFFA;
   }
   body.dark {
     --bg:#1A1714;--bg2:#242018;--bg3:#2E2A24;
@@ -73,7 +74,7 @@
   .section-heading{font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--text3);margin:20px 0 10px;}
 
   /* BALANCE CARD */
-  .balance-card{background:var(--text);color:var(--bg);border-radius:var(--radius);padding:20px;margin-bottom:16px;position:relative;overflow:hidden;}
+  .balance-card{background:var(--accent);color:#fff;border-radius:var(--radius);padding:20px;margin-bottom:16px;position:relative;overflow:hidden;}
   .balance-card::before{content:'';position:absolute;right:-20px;top:-20px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,0.04);}
   .balance-label{font-size:11px;letter-spacing:0.08em;text-transform:uppercase;opacity:0.5;margin-bottom:6px;}
   .balance-score{font-family:'DM Serif Display',serif;font-size:48px;line-height:1;}
@@ -176,6 +177,9 @@
   .color-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
   .color-swatch{width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid transparent;}
   .color-swatch.selected{border-color:var(--text);}
+  .accent-swatch{width:32px;height:32px;border-radius:50%;cursor:pointer;border:3px solid transparent;transition:transform 0.15s;}
+  .accent-swatch.selected{border-color:var(--text);transform:scale(1.15);}
+  .accent-swatch:active{transform:scale(0.95);}
   .btn-add{background:var(--text);color:var(--bg);border:none;border-radius:12px;padding:10px 20px;font-size:14px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;}
   .nudge-opt{padding:6px 12px;border-radius:20px;border:1px solid var(--border);background:var(--bg2);font-size:12px;color:var(--text2);cursor:pointer;font-family:'DM Sans',sans-serif;}
   .nudge-opt.active{background:var(--text);color:var(--bg);border-color:var(--text);}
@@ -282,7 +286,6 @@
         <div class="balance-label">Today's balance</div>
         <div class="balance-score" id="balance-score">—</div>
         <div class="balance-desc" id="balance-desc">Tap an activity to start tracking</div>
-        <div class="balance-chips" id="balance-chips"></div>
       </div>
       <div class="section-heading">Your activities</div>
       <div id="activity-list"></div>
@@ -380,7 +383,7 @@
       <div class="manage-card" id="manage-list"></div>
       <div class="section-heading" style="margin-top:24px">Preferences</div>
       <div class="manage-card">
-        <div class="manage-item" style="border-bottom:none">
+        <div class="manage-item">
           <div style="flex:1">
             <div class="manage-name">Dark mode</div>
             <div style="font-size:12px;color:var(--text3);margin-top:2px">Easy on the eyes at night</div>
@@ -388,6 +391,13 @@
           <div id="dark-toggle" onclick="toggleDarkMode()" style="width:48px;height:28px;border-radius:14px;background:var(--bg3);cursor:pointer;position:relative;transition:background 0.2s;flex-shrink:0;">
             <div id="dark-toggle-knob" style="position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--text3);transition:all 0.2s;"></div>
           </div>
+        </div>
+        <div class="manage-item" style="border-bottom:none">
+          <div style="flex:1">
+            <div class="manage-name">Accent color</div>
+            <div style="font-size:12px;color:var(--text3);margin-top:2px">Personalise your balance card</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;" id="accent-swatch-row"></div>
         </div>
       </div>
       <button class="signout-btn" onclick="signOut()">Sign out</button>
@@ -728,7 +738,7 @@ function showScreen(name){
   const nav=document.getElementById('nav-'+name);if(nav)nav.classList.add('active');
   if(name==='today')renderToday();
   if(name==='insights')renderInsights();
-  if(name==='manage')renderManage();
+  if(name==='manage'){renderManage();renderAccentSwatches();}
 }
 
 // ── TODAY ─────────────────────────────────────────────────────────────────────
@@ -752,9 +762,7 @@ async function renderToday(){
   }
   document.getElementById('balance-score').textContent=score;
   document.getElementById('balance-desc').textContent=desc;
-  document.getElementById('balance-chips').innerHTML=activities.map(a=>
-    `<span class="balance-chip ${enoughIds.has(a.id)?'done':''}">${a.emoji} ${a.name}</span>`
-  ).join('');
+
   // Build reminder nudges
   const now=new Date();
   const currentTime=now.getHours()*60+now.getMinutes();
@@ -1185,6 +1193,38 @@ function initDarkMode(){
   if(saved==='1'){document.body.classList.add('dark');updateDarkToggle(true);}
 }
 
+// ── ACCENT COLOR ──────────────────────────────────────────────────────────────
+const ACCENT_COLORS=[
+  {id:'default', label:'Charcoal', color:'#2A2520'},
+  {id:'purple',  label:'Purple',   color:'#6B5EA8'},
+  {id:'green',   label:'Green',    color:'#3A7D5C'},
+  {id:'amber',   label:'Amber',    color:'#C8771A'},
+  {id:'rose',    label:'Rose',     color:'#B85C6E'},
+  {id:'blue',    label:'Blue',     color:'#3A6EA8'},
+];
+let _currentAccent='default';
+function applyAccent(id){
+  const a=ACCENT_COLORS.find(c=>c.id===id)||ACCENT_COLORS[0];
+  document.documentElement.style.setProperty('--accent',a.color);
+  _currentAccent=id;
+}
+function selectAccent(id){
+  applyAccent(id);
+  localStorage.setItem('findEnough_accent',id);
+  renderAccentSwatches();
+}
+function renderAccentSwatches(){
+  const row=document.getElementById('accent-swatch-row');
+  if(!row)return;
+  row.innerHTML=ACCENT_COLORS.map(a=>
+    `<div class="accent-swatch ${a.id===_currentAccent?'selected':''}" style="background:${a.color}" title="${a.label}" onclick="selectAccent('${a.id}')"></div>`
+  ).join('');
+}
+function initAccent(){
+  const saved=localStorage.getItem('findEnough_accent')||'default';
+  applyAccent(saved);
+}
+
 // ── NUDGE PICKER ──────────────────────────────────────────────────────────────
 function selectNudge(mins){
   selectedNudgeMins=mins;
@@ -1259,6 +1299,7 @@ async function saveEditActivity(){
 // ── BOOT ──────────────────────────────────────────────────────────────────────
 (function boot(){
   initDarkMode();
+  initAccent();
   const savedUserId=localStorage.getItem('findEnough_userId');
   const savedPassphrase=localStorage.getItem('findEnough_passphrase');
   if(savedUserId&&savedPassphrase&&PASSPHRASES[savedPassphrase]===savedUserId){
