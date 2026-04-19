@@ -580,6 +580,7 @@ textarea { resize: none; }
   <div class="progress-track" style="margin-bottom:10px">
     <div id="bar-e" class="prog-e" style="width:0%"></div>
     <div id="bar-n" class="prog-n" style="width:0%"></div>
+    <div id="bar-f" style="height:100%;width:0%;background:var(--sky-dim);transition:width 0.4s"></div>
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
     <div style="text-align:center">
@@ -1710,16 +1711,19 @@ function refreshMain() {
   var combined = totMonth + fixedCCTotal;
   var rem = ccCeiling - combined;
 
-  // Progress bar based on combined vs CC ceiling
-  var pctDisc = ccCeiling > 0 ? Math.min(totMonth / ccCeiling * 100, 100) : 0;
-  var pctFixed = ccCeiling > 0 ? Math.min(fixedCCTotal / ccCeiling * 100, 100 - pctDisc) : 0;
+  // Progress bar — three segments: essential, non-essential, fixed CC bills
+  var pctE = ccCeiling > 0 ? Math.min(totE / ccCeiling * 100, 100) : 0;
+  var pctN = ccCeiling > 0 ? Math.min(totN / ccCeiling * 100, 100 - pctE) : 0;
+  var pctF = ccCeiling > 0 ? Math.min(fixedCCTotal / ccCeiling * 100, 100 - pctE - pctN) : 0;
 
   // Month label
   var mn = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   document.getElementById('dash-month-label').textContent = mn[now.getMonth()] + ' spending';
   document.getElementById('dash-month-budget-label').textContent = fmt(ccCeiling) + '/mo CC target';
-  document.getElementById('bar-e').style.width = pctDisc.toFixed(1) + '%';
-  document.getElementById('bar-n').style.width = pctFixed.toFixed(1) + '%';
+  document.getElementById('bar-e').style.width = pctE.toFixed(1) + '%';
+  document.getElementById('bar-n').style.width = pctN.toFixed(1) + '%';
+  var barF = document.getElementById('bar-f');
+  if (barF) barF.style.width = pctF.toFixed(1) + '%';
   document.getElementById('lbl-e').textContent = fmt(totE);
   document.getElementById('lbl-n').textContent = fmt(totN);
   document.getElementById('stat-month-spent').textContent = fmt(totMonth);
