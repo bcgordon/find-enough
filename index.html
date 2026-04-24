@@ -104,6 +104,35 @@
   .dot{width:7px;height:7px;border-radius:50%;background:var(--bg3);}
   .dot.on{background:var(--purple);}.dot.enough{background:var(--green);}
 
+  /* LIMIT BAR — on activity cards */
+  .limit-bar-wrap{margin-top:7px;}
+  .limit-bar-track{height:4px;border-radius:3px;background:var(--bg3);overflow:visible;position:relative;}
+  .limit-bar-fill{height:100%;border-radius:3px;transition:width 0.4s ease;max-width:100%;}
+  .limit-bar-fill.under{background:var(--green);}
+  .limit-bar-fill.approaching{background:var(--amber);}
+  .limit-bar-fill.over{background:var(--rose);max-width:100%;}
+  .limit-bar-overflow{position:absolute;top:50%;transform:translateY(-50%);right:-1px;height:10px;border-radius:2px;opacity:0.55;}
+  .limit-bar-label{display:flex;justify-content:space-between;align-items:center;margin-top:3px;}
+  .limit-bar-text{font-size:10px;color:var(--text3);}
+  .limit-bar-text.over{color:var(--rose);font-weight:500;}
+  .limit-bar-text.approaching{color:var(--amber);font-weight:500;}
+
+  /* LIMIT BAR — in session screen */
+  .session-limit-wrap{width:100%;background:var(--bg2);border-radius:14px;padding:14px 16px;margin-bottom:16px;}
+  .session-limit-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+  .session-limit-label{font-size:12px;color:var(--text2);font-weight:500;}
+  .session-limit-val{font-size:12px;color:var(--text3);}
+  .session-limit-val.approaching{color:var(--amber);font-weight:500;}
+  .session-limit-val.over{color:var(--rose);font-weight:500;}
+  .session-limit-track{height:6px;border-radius:4px;background:var(--bg3);overflow:hidden;position:relative;}
+  .session-limit-fill{height:100%;border-radius:4px;transition:width 0.5s ease;}
+  .session-limit-fill.under{background:var(--green);}
+  .session-limit-fill.approaching{background:var(--amber);}
+  .session-limit-fill.over{background:var(--rose);}
+  .session-limit-note{font-size:11px;margin-top:6px;line-height:1.4;}
+  .session-limit-note.approaching{color:var(--amber);}
+  .session-limit-note.over{color:var(--rose);}
+
   /* BOTTOM NAV */
   .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:var(--bg);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-top:1px solid var(--border);display:flex;padding-bottom:var(--safe-bottom);z-index:100;}
   .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 0 8px;cursor:pointer;gap:3px;}
@@ -144,10 +173,13 @@
   .insight-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;}
   .insight-heading{font-size:13px;font-weight:500;margin-bottom:12px;}
   .bar-item{margin-bottom:10px;}
-  .bar-top{display:flex;justify-content:space-between;margin-bottom:4px;}
+  .bar-top{display:flex;justify-content:space-between;margin-bottom:4px;align-items:center;}
   .bar-name{font-size:13px;}.bar-val{font-size:12px;color:var(--text3);}
-  .bar-track{height:7px;background:var(--bg2);border-radius:4px;overflow:hidden;}
+  .bar-track{height:7px;background:var(--bg2);border-radius:4px;overflow:hidden;position:relative;}
   .bar-fill{height:100%;border-radius:4px;}
+  /* limit marker line on insight bars */
+  .bar-limit-marker{position:absolute;top:0;bottom:0;width:2px;border-radius:1px;background:var(--rose);opacity:0.6;}
+  .bar-limit-tag{font-size:9px;color:var(--rose);opacity:0.8;margin-left:4px;font-weight:500;}
   .obs-text{font-size:13px;color:var(--text2);line-height:1.65;font-style:italic;margin-bottom:10px;}
   .obs-text strong{color:var(--text);font-style:normal;}
   .log-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer;}
@@ -389,6 +421,17 @@
       <div class="session-name" id="session-name"></div>
       <div class="timer-big" id="timer-display">0:00</div>
       <div class="timer-sub">session time</div>
+      <!-- LIMIT AWARENESS (shown only when limit is set) -->
+      <div class="session-limit-wrap" id="session-limit-wrap" style="display:none">
+        <div class="session-limit-header">
+          <span class="session-limit-label">Weekly limit</span>
+          <span class="session-limit-val" id="session-limit-val"></span>
+        </div>
+        <div class="session-limit-track">
+          <div class="session-limit-fill" id="session-limit-fill"></div>
+        </div>
+        <div class="session-limit-note" id="session-limit-note"></div>
+      </div>
       <div class="nudge-card" id="nudge-card" style="display:none">
         <div class="nudge-title">How are you feeling right now?</div>
         <div class="mood-row">
@@ -498,70 +541,37 @@
       </div>
     </div>
     <div class="about-scroll">
-
       <div class="about-hero">
         <div class="about-hero-title">find enough</div>
         <div class="about-hero-sub">A gentle tool for finding balance in the things you love to do.</div>
       </div>
-
       <div class="about-quote">
         <div class="about-quote-text">"Head first, eyes closed, can't lose" — turns out, you can lose. A lot.</div>
         <div class="about-quote-attr">— Brian, who built this app</div>
       </div>
-
       <div class="about-section">
         <div class="about-section-title">Why this exists</div>
-        <div class="about-card">
-          <div class="about-card-text">I have a tendency to go to extremes. Either I don't do something at all, or I dive in headfirst and lose all sense of balance. Piano for six hours straight. Reading until 2am. A video game weekend that somehow turns into a video game week.</div>
-        </div>
-        <div class="about-card">
-          <div class="about-card-text">The hard part isn't doing the things I love — it's knowing when I've done <em>enough</em> of them. That sweet spot between "I barely touched it today" and "I went way overboard" is surprisingly tricky to find.</div>
-        </div>
-        <div class="about-card">
-          <div class="about-card-text">So I built this. Not as a productivity tracker or a time police app — but as a gentle nudge to help me notice when I feel satisfied, and to spread that satisfaction across more of the things I care about.</div>
-        </div>
+        <div class="about-card"><div class="about-card-text">I have a tendency to go to extremes. Either I don't do something at all, or I dive in headfirst and lose all sense of balance. Piano for six hours straight. Reading until 2am. A video game weekend that somehow turns into a video game week.</div></div>
+        <div class="about-card"><div class="about-card-text">The hard part isn't doing the things I love — it's knowing when I've done <em>enough</em> of them. That sweet spot between "I barely touched it today" and "I went way overboard" is surprisingly tricky to find.</div></div>
+        <div class="about-card"><div class="about-card-text">So I built this. Not as a productivity tracker or a time police app — but as a gentle nudge to help me notice when I feel satisfied, and to spread that satisfaction across more of the things I care about.</div></div>
       </div>
-
       <div class="about-section">
         <div class="about-section-title">How it works</div>
-        <div class="about-card">
-          <div class="about-card-title">Start a session</div>
-          <div class="about-card-text">Tap any activity on the Today screen when you start doing it. A timer runs in the background — even if you close the app.</div>
-        </div>
-        <div class="about-card">
-          <div class="about-card-title">Find your enough</div>
-          <div class="about-card-text">When you feel done — not burned out, not guilty, just genuinely satisfied — tap "That's enough for today." That's the moment this app is built around.</div>
-        </div>
-        <div class="about-card">
-          <div class="about-card-title">Check in with how you feel</div>
-          <div class="about-card-text">Every time you end a session, you'll be asked how it felt: Flow, Good, Meh, or Guilt. Over time, those check-ins reveal patterns — like which activities tend to tip into "too much," and at what point.</div>
-        </div>
-        <div class="about-card">
-          <div class="about-card-title">Look at your insights</div>
-          <div class="about-card-text">The Insights tab shows you how your time has been spread across activities — by week, by month, and over time. No judgment. Just data to help you notice what's working.</div>
-        </div>
+        <div class="about-card"><div class="about-card-title">Start a session</div><div class="about-card-text">Tap any activity on the Today screen when you start doing it. A timer runs in the background — even if you close the app.</div></div>
+        <div class="about-card"><div class="about-card-title">Find your enough</div><div class="about-card-text">When you feel done — not burned out, not guilty, just genuinely satisfied — tap "That's enough for today." That's the moment this app is built around.</div></div>
+        <div class="about-card"><div class="about-card-title">Check in with how you feel</div><div class="about-card-text">Every time you end a session, you'll be asked how it felt: Flow, Good, Meh, or Guilt. Over time, those check-ins reveal patterns — like which activities tend to tip into "too much," and at what point.</div></div>
+        <div class="about-card"><div class="about-card-title">Look at your insights</div><div class="about-card-text">The Insights tab shows you how your time has been spread across activities — by week, by month, and over time. No judgment. Just data to help you notice what's working.</div></div>
       </div>
-
       <div class="about-section">
         <div class="about-section-title">Make it yours</div>
-        <div class="about-card">
-          <div class="about-card-text">My activities won't be yours. Piano and knitting are mine — yours might be running, painting, cooking, or something else entirely. Head to the Manage tab to swap out any activity, add new ones, or reorder them however makes sense to you.</div>
-        </div>
-        <div class="about-card">
-          <div class="about-card-text">One thing I've already learned from using this: sometimes just a little time each day is genuinely enough. You don't have to go all-in every time. A short session that ends on a "Good" feeling beats a marathon that ends on "Guilt" every single time.</div>
-        </div>
+        <div class="about-card"><div class="about-card-text">My activities won't be yours. Piano and knitting are mine — yours might be running, painting, cooking, or something else entirely. Head to the Manage tab to swap out any activity, add new ones, or reorder them however makes sense to you.</div></div>
+        <div class="about-card"><div class="about-card-text">One thing I've already learned from using this: sometimes just a little time each day is genuinely enough. You don't have to go all-in every time. A short session that ends on a "Good" feeling beats a marathon that ends on "Guilt" every single time.</div></div>
       </div>
-
       <div class="about-section">
         <div class="about-section-title">A note on the philosophy</div>
-        <div class="about-card">
-          <div class="about-card-text">This isn't about doing less of what you love. It's about doing more of it — sustainably. Balance isn't restriction. It's what lets you keep showing up for all the things that matter to you, day after day, without burning out or feeling guilty.</div>
-        </div>
-        <div class="about-card">
-          <div class="about-card-text">I hope this helps you do more of what you love, in a way that feels fulfilling and sustainable. That's all it's trying to do. 🌿</div>
-        </div>
+        <div class="about-card"><div class="about-card-text">This isn't about doing less of what you love. It's about doing more of it — sustainably. Balance isn't restriction. It's what lets you keep showing up for all the things that matter to you, day after day, without burning out or feeling guilty.</div></div>
+        <div class="about-card"><div class="about-card-text">I hope this helps you do more of what you love, in a way that feels fulfilling and sustainable. That's all it's trying to do. 🌿</div></div>
       </div>
-
       <div class="about-section">
         <div class="about-section-title">Your access</div>
         <div class="about-card">
@@ -569,9 +579,6 @@
           <div class="passphrase-badge" id="about-passphrase"></div>
         </div>
       </div>
-
-      <!-- TRA BRAND SECTION removed -->
-
     </div>
   </div>
 
@@ -631,11 +638,9 @@
   </nav>
 </div>
 
-<!-- welcome overlay removed -->
-
 <!-- EDIT ACTIVITY MODAL -->
 <div class="modal-overlay" id="edit-activity-modal" style="display:none" onclick="closeEditActivityModal(event)">
-  <div class="modal-sheet" style="max-height:85vh;overflow-y:auto;">
+  <div class="modal-sheet" style="max-height:90vh;overflow-y:auto;">
     <div class="modal-title">Edit activity</div>
     <div style="display:flex;gap:8px;margin-bottom:10px;margin-top:16px;">
       <button class="form-input emoji-input" id="edit-act-emoji-btn" onclick="openEmojiPickerForEdit()" style="cursor:pointer;font-size:26px;display:flex;align-items:center;justify-content:center;">🌟</button>
@@ -653,6 +658,30 @@
         <button class="nudge-opt" data-mins="90" onclick="selectEditNudge(90)">90 min</button>
       </div>
     </div>
+    <!-- ── WEEKLY LIMIT ── -->
+    <div style="margin-bottom:16px;">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:2px;">Weekly time limit <span style="font-style:italic;opacity:0.7">(optional)</span></div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:8px;line-height:1.5;">Set a gentle ceiling for the week. You'll see a visual gauge as you approach it — nothing will stop you from going over.</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;" id="edit-limit-picker">
+        <button class="nudge-opt" data-limit="0" onclick="selectEditLimit(0)">None</button>
+        <button class="nudge-opt" data-limit="60" onclick="selectEditLimit(60)">1h</button>
+        <button class="nudge-opt" data-limit="120" onclick="selectEditLimit(120)">2h</button>
+        <button class="nudge-opt" data-limit="180" onclick="selectEditLimit(180)">3h</button>
+        <button class="nudge-opt" data-limit="300" onclick="selectEditLimit(300)">5h</button>
+        <button class="nudge-opt" data-limit="420" onclick="selectEditLimit(420)">7h</button>
+        <button class="nudge-opt" data-limit="600" onclick="selectEditLimit(600)">10h</button>
+        <button class="nudge-opt" data-limit="-1" onclick="selectEditLimit(-1)">Custom</button>
+      </div>
+      <div id="edit-limit-custom-wrap" style="display:none;margin-top:8px;display:none;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <input type="number" id="edit-limit-custom-hrs" min="0" max="99" placeholder="0" style="width:60px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px;font-size:14px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;text-align:center;">
+          <span style="font-size:13px;color:var(--text3)">h</span>
+          <input type="number" id="edit-limit-custom-mins" min="0" max="59" placeholder="0" style="width:60px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px;font-size:14px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;text-align:center;">
+          <span style="font-size:13px;color:var(--text3)">min</span>
+        </div>
+      </div>
+    </div>
+    <!-- ── END WEEKLY LIMIT ── -->
     <div style="margin-bottom:16px;">
       <div style="font-size:12px;color:var(--text3);margin-bottom:6px;">Daily reminder time <span style="font-style:italic;opacity:0.7">(optional)</span></div>
       <div style="display:flex;align-items:center;gap:10px;">
@@ -770,8 +799,6 @@ const EMOJI_CATS=[
 let currentUserId=null, currentPassphrase=null;
 let activities=[], allSessions=[], todaySessions=[];
 let selectedColorId='purple', currentInsightTab='7d';
-// Multi-session: keyed by activity ID
-// Each entry: { startTime, seconds, nudgeShown, mood, timerInterval, reminderTimeout }
 let activeSessions={};
 let _viewingActivityId=null;
 let _pendingEnough=false, _editSessionId=null, _editEnough=false, _editMood=null, _editDuration=0;
@@ -779,6 +806,7 @@ let _currentEmojiCat=0, _filteredEmojis=null;
 let selectedNudgeMins=15;
 let _editForActivity=false, _editActId=null, _editActColorId='purple', _editActNudgeMins=30;
 let _editActReminderTime=null, _editActReminderFreq=0;
+let _editActLimitMins=0; // 0 = no limit; >0 = limit in minutes
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 function todayStr(){
@@ -789,26 +817,122 @@ let _lastRenderedDate = null;
 
 async function checkDayRollover(){
   const today = todayStr();
-  // Always filter todaySessions to only today — regardless of what's cached
   todaySessions = allSessions.filter(s=>s.date===today);
   if(_lastRenderedDate && _lastRenderedDate !== today){
-    // Day has rolled over — do a full fresh fetch from Supabase
     try {
       const{data:sess}=await sb.from('sessions').select('*').eq('user_id',currentUserId).order('created_at',{ascending:false});
       if(sess){ allSessions=sess; todaySessions=allSessions.filter(s=>s.date===today); }
     } catch(e){}
-    // Clear any stale active sessions from yesterday
     localStorage.removeItem('findEnough_activeSessions');
     Object.values(activeSessions).forEach(s=>{clearInterval(s.timerInterval);clearTimeout(s.reminderTimeout);});
     activeSessions={}; _viewingActivityId=null;
   }
   _lastRenderedDate = today;
 }
+
 function fmtTime(s){const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;return h>0?`${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`:`${m}:${String(sec).padStart(2,'0')}`;}
 function fmtMins(s){if(s<60)return s+'s';const m=Math.round(s/60);if(m<60)return m+' min';const h=Math.floor(m/60),r=m%60;return r?`${h}h ${r}m`:`${h}h`;}
 function fmtRemTime(t){if(!t)return'';const[h,m]=t.split(':').map(Number);const ampm=h>=12?'PM':'AM';const h12=h%12||12;return`${h12}:${String(m).padStart(2,'0')} ${ampm}`;}
 let _tt;
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(_tt);_tt=setTimeout(()=>t.classList.remove('show'),2800);}
+
+// ── WEEKLY LIMIT HELPERS ──────────────────────────────────────────────────────
+// Returns start of current week (Sunday) as YYYY-MM-DD
+function weekStartStr(){
+  const now=new Date();
+  const d=new Date(now);
+  d.setDate(now.getDate()-now.getDay());
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+// Returns all date strings for the current week (Sun-Sat)
+function currentWeekDays(){
+  const start=new Date(weekStartStr());
+  return Array.from({length:7},(_,i)=>{
+    const d=new Date(start);d.setDate(start.getDate()+i);
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  });
+}
+
+// Returns total seconds tracked for an activity this week (from allSessions + any live active session)
+function getWeeklySecsForActivity(actId){
+  const days=currentWeekDays();
+  const saved=allSessions.filter(s=>s.activity_id===actId&&days.includes(s.date)).reduce((sum,s)=>sum+(s.duration||0),0);
+  const live=activeSessions[actId]?activeSessions[actId].seconds:0;
+  return saved+live;
+}
+
+// Returns limit state: { pct, over, approaching, overSecs, remainSecs }
+function getLimitState(actId, limitMins){
+  if(!limitMins||limitMins<=0) return null;
+  const limitSecs=limitMins*60;
+  const usedSecs=getWeeklySecsForActivity(actId);
+  const pct=Math.min(usedSecs/limitSecs*100,100);
+  const overSecs=Math.max(usedSecs-limitSecs,0);
+  const remainSecs=Math.max(limitSecs-usedSecs,0);
+  const over=usedSecs>limitSecs;
+  const approaching=!over&&pct>=75;
+  return{pct,over,approaching,overSecs,remainSecs,usedSecs,limitSecs};
+}
+
+// Build the small limit bar HTML for activity cards
+function buildLimitBarHTML(actId, limitMins){
+  const state=getLimitState(actId,limitMins);
+  if(!state) return '';
+  const cls=state.over?'over':state.approaching?'approaching':'under';
+  let labelRight='';
+  if(state.over){
+    labelRight=`<span class="limit-bar-text over">+${fmtMins(state.overSecs)} over</span>`;
+  } else if(state.approaching){
+    labelRight=`<span class="limit-bar-text approaching">${fmtMins(state.remainSecs)} left</span>`;
+  } else {
+    labelRight=`<span class="limit-bar-text">${fmtMins(state.remainSecs)} left</span>`;
+  }
+  // overflow indicator: a small notch past 100% to show how far over
+  const overflowPct = state.over ? Math.min((state.overSecs/state.limitSecs)*100, 40) : 0;
+  const overflowBar = state.over ? `<div class="limit-bar-overflow" style="right:0;width:${Math.max(overflowPct,4)}%;background:var(--rose);height:10px;border-radius:0 3px 3px 0;"></div>` : '';
+  return `<div class="limit-bar-wrap">
+    <div class="limit-bar-track">
+      <div class="limit-bar-fill ${cls}" style="width:${state.pct}%"></div>
+      ${overflowBar}
+    </div>
+    <div class="limit-bar-label">
+      <span class="limit-bar-text" style="color:var(--text3);font-size:10px;">Weekly limit · ${fmtMins(limitMins*60)}</span>
+      ${labelRight}
+    </div>
+  </div>`;
+}
+
+// Update session screen limit display
+function updateSessionLimitDisplay(){
+  const id=_viewingActivityId;if(!id)return;
+  const act=activities.find(a=>a.id===id);if(!act||!act.weekly_limit_minutes)return;
+  const state=getLimitState(id,act.weekly_limit_minutes);
+  if(!state)return;
+  const wrap=document.getElementById('session-limit-wrap');
+  const val=document.getElementById('session-limit-val');
+  const fill=document.getElementById('session-limit-fill');
+  const note=document.getElementById('session-limit-note');
+  if(!wrap) return;
+  wrap.style.display='block';
+  const cls=state.over?'over':state.approaching?'approaching':'under';
+  fill.style.width=state.pct+'%';
+  fill.className='session-limit-fill '+cls;
+  val.className='session-limit-val '+(state.over?'over':state.approaching?'approaching':'');
+  if(state.over){
+    val.textContent=fmtMins(state.usedSecs)+' / '+fmtMins(state.limitSecs);
+    note.textContent=`You're ${fmtMins(state.overSecs)} past your weekly limit. Still your call.`;
+    note.className='session-limit-note over';
+  } else if(state.approaching){
+    val.textContent=fmtMins(state.usedSecs)+' / '+fmtMins(state.limitSecs);
+    note.textContent=`${fmtMins(state.remainSecs)} remaining this week.`;
+    note.className='session-limit-note approaching';
+  } else {
+    val.textContent=fmtMins(state.usedSecs)+' / '+fmtMins(state.limitSecs);
+    note.textContent=`${fmtMins(state.remainSecs)} remaining this week.`;
+    note.className='session-limit-note';
+  }
+}
 
 // ── AUTH ──────────────────────────────────────────────────────────────────────
 async function handlePassphrase(){
@@ -822,7 +946,6 @@ async function handlePassphrase(){
   const isAdmin=rawVal===ADMIN_PIN;
   let userId=PASSPHRASES[val]||(isAdmin?'user_admin':null);
   let finalPassphrase=isAdmin?rawVal:val;
-  // Check self-registered users in Supabase
   if(!userId){
     try{
       const{data}=await sb.from('user_accounts').select('user_id').eq('passphrase',val).single();
@@ -897,13 +1020,8 @@ function showScreen(name){
 // ── TODAY ─────────────────────────────────────────────────────────────────────
 async function renderToday(){
   await checkDayRollover();
-  // Force todaySessions to strictly today — belt and suspenders
   const _today = todayStr();
   todaySessions = allSessions.filter(s => s.date === _today);
-  console.log('[FindEnough] today:', _today);
-  console.log('[FindEnough] todaySessions count:', todaySessions.length);
-  console.log('[FindEnough] todaySessions dates:', todaySessions.map(s=>s.date+' | '+s.duration+'s | activity:'+s.activity_id.slice(0,8)));
-  console.log('[FindEnough] allSessions sample:', allSessions.slice(0,5).map(s=>s.date+' | '+s.duration+'s'));
   document.getElementById('today-date').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
   const enoughIds=new Set(todaySessions.filter(s=>s.enough).map(s=>s.activity_id));
   const enoughCount=activities.filter(a=>enoughIds.has(a.id)).length;
@@ -916,7 +1034,6 @@ async function renderToday(){
   document.getElementById('balance-score').textContent=score;
   document.getElementById('balance-desc').textContent=desc;
 
-  // Build reminder nudges
   const now=new Date();
   const currentTime=now.getHours()*60+now.getMinutes();
   const dayOfWeek=now.getDay();
@@ -924,7 +1041,6 @@ async function renderToday(){
   const weekDays=Array.from({length:7},(_,i)=>{const d=new Date(weekStart);d.setDate(weekStart.getDate()+i);return d.toISOString().slice(0,10);});
   const reminders=[];
   activities.forEach(a=>{
-    // Time-based reminder
     if(a.reminder_time){
       const[rh,rm]=a.reminder_time.split(':').map(Number);
       const reminderMins=rh*60+rm;
@@ -933,7 +1049,6 @@ async function renderToday(){
         reminders.push({activity:a,type:'time',msg:`You set a reminder for ${fmtRemTime(a.reminder_time)} — there's still time today.`});
       }
     }
-    // Frequency-based reminder
     if(a.reminder_freq&&a.reminder_freq>0){
       const doneThisWeek=new Set(allSessions.filter(s=>s.activity_id===a.id&&weekDays.includes(s.date)).map(s=>s.date)).size;
       const daysLeft=6-dayOfWeek;
@@ -962,10 +1077,18 @@ async function renderToday(){
     const filled=isEnough?5:Math.min(actS.length,4);
     const dots=Array.from({length:5},(_,i)=>`<span class="dot ${isEnough?'enough':i<filled?'on':''}"></span>`).join('');
     const badge=isActive?`<span class="status-badge active">Active</span>`:isEnough?`<span class="status-badge enough">Enough ✓</span>`:`<span class="status-badge none">${totalSec>0?fmtMins(totalSec):'Start'}</span>`;
+    // Limit bar (only shown if weekly_limit_minutes is set)
+    const limitBar = a.weekly_limit_minutes ? buildLimitBarHTML(a.id, a.weekly_limit_minutes) : '';
     return`<div class="activity-card ${isEnough?'enough':''}" onclick="startSession('${a.id}')">
       <div class="activity-icon-wrap" style="background:${color.bg}">${a.emoji}</div>
-      <div class="activity-body"><div class="activity-name">${a.name}</div><div class="dot-row">${dots}</div><div class="activity-meta">${totalSec>0?fmtMins(totalSec)+' today':'Not started'}</div></div>
-      <div>${badge}</div></div>`;
+      <div class="activity-body">
+        <div class="activity-name">${a.name}</div>
+        <div class="dot-row">${dots}</div>
+        <div class="activity-meta">${totalSec>0?fmtMins(totalSec)+' today':'Not started'}</div>
+        ${limitBar}
+      </div>
+      <div>${badge}</div>
+    </div>`;
   }).join('');
 }
 
@@ -982,7 +1105,11 @@ function startSessionTimer(id){
   clearInterval(s.timerInterval);
   s.timerInterval=setInterval(()=>{
     s.seconds=Math.floor((Date.now()-s.startTime)/1000);
-    if(_viewingActivityId===id) document.getElementById('timer-display').textContent=fmtTime(s.seconds);
+    if(_viewingActivityId===id){
+      document.getElementById('timer-display').textContent=fmtTime(s.seconds);
+      // Update limit display every tick (cheaply)
+      updateSessionLimitDisplay();
+    }
     const nudgeSecs=(act&&act.nudge_minutes?act.nudge_minutes:30)*60;
     if(!s.nudgeShown&&s.seconds>=nudgeSecs){
       s.nudgeShown=true;
@@ -994,7 +1121,6 @@ function startSessionTimer(id){
 function startSession(id){
   const act=activities.find(a=>a.id===id);if(!act)return;
   if(todaySessions.some(s=>s.activity_id===id&&s.enough)){showToast(`You've already found enough ${act.name} today 🌿`);return;}
-  // Already tracking — just go to session screen
   if(activeSessions[id]){
     openSessionScreen(id);return;
   }
@@ -1019,6 +1145,14 @@ function openSessionScreen(id){
   document.querySelectorAll('[id^="end-mood-"]').forEach(b=>b.classList.remove('selected'));
   if(s.mood) document.getElementById('mood-'+s.mood)?.classList.add('selected');
   document.getElementById('timer-display').textContent=fmtTime(s.seconds);
+  // Set up limit display
+  const limitWrap=document.getElementById('session-limit-wrap');
+  if(act.weekly_limit_minutes&&act.weekly_limit_minutes>0){
+    limitWrap.style.display='block';
+    updateSessionLimitDisplay();
+  } else {
+    limitWrap.style.display='none';
+  }
   document.querySelectorAll('.screen').forEach(sc=>sc.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('screen-session').classList.add('active');
@@ -1041,7 +1175,6 @@ function restoreSession(){
       anyRestored=true;
     });
     if(anyRestored){
-      // Show the first restored session
       const firstId=Object.keys(activeSessions)[0];
       openSessionScreen(firstId);
     }
@@ -1148,6 +1281,15 @@ function renderPeriodInsights({sessions,label}){
     if(a.secs===0)obs.push(`<strong>${a.emoji} ${a.name}</strong> hasn't been visited. Might be worth a moment.`);
     const neg=a.moods.filter(m=>m==='guilt'||m==='meh').length;
     if(neg>=2)obs.push(`You rated <strong>${a.emoji} ${a.name}</strong> as "meh" or "guilt" ${neg} times. Notice what was different on those sessions.`);
+    // Limit observations (weekly basis — apply to 7d tab)
+    if(a.weekly_limit_minutes&&_insightTab==='7d'){
+      const limitSecs=a.weekly_limit_minutes*60;
+      if(a.secs>limitSecs){
+        obs.push(`<strong>${a.emoji} ${a.name}</strong> is ${fmtMins(a.secs-limitSecs)} over your weekly limit of ${fmtMins(limitSecs)}.`);
+      } else if(a.secs>limitSecs*0.75){
+        obs.push(`<strong>${a.emoji} ${a.name}</strong> is at ${Math.round(a.secs/limitSecs*100)}% of your ${fmtMins(limitSecs)} weekly limit.`);
+      }
+    }
   });
   if(enoughCount===0&&sessions.length>0)obs.push(`You haven't marked any activity as "enough" yet. Try it — it's a small but powerful moment.`);
   if(enoughCount>=5)obs.push(`<strong>${enoughCount} "enough" moments</strong>. You're building the habit of noticing satisfaction.`);
@@ -1174,7 +1316,20 @@ function renderPeriodInsights({sessions,label}){
     ${actTimes.length===0?'<div class="obs-text">No sessions yet.</div>':actTimes.map(a=>{
       const color=COLORS.find(c=>c.id===a.color_id)||COLORS[0];
       const pct=Math.round(a.secs/maxSecs*100);
-      return`<div class="bar-item"><div class="bar-top"><span class="bar-name">${a.emoji} ${a.name}</span><span class="bar-val">${fmtMins(a.secs)}</span></div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color.dot}"></div></div></div>`;
+      // Limit marker on bar
+      let limitMarker='';
+      let limitTag='';
+      if(a.weekly_limit_minutes&&_insightTab==='7d'){
+        const limitSecs=a.weekly_limit_minutes*60;
+        const markerPct=Math.min(Math.round(limitSecs/maxSecs*100),100);
+        limitMarker=`<div class="bar-limit-marker" style="left:${markerPct}%"></div>`;
+        if(a.secs>limitSecs){
+          limitTag=`<span class="bar-limit-tag">+${fmtMins(a.secs-limitSecs)}</span>`;
+        } else {
+          limitTag=`<span style="font-size:9px;color:var(--text3);margin-left:4px;">${Math.round(a.secs/limitSecs*100)}% of ${fmtMins(limitSecs)}</span>`;
+        }
+      }
+      return`<div class="bar-item"><div class="bar-top"><span class="bar-name">${a.emoji} ${a.name}</span><span class="bar-val" style="display:flex;align-items:center;">${fmtMins(a.secs)}${limitTag}</span></div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color.dot}"></div>${limitMarker}</div></div>`;
     }).join('')}
   </div>
   ${moodHTML}
@@ -1191,7 +1346,6 @@ function renderPeriodInsights({sessions,label}){
 }
 
 function renderHistory(){
-  // Group sessions by month
   const months={};
   allSessions.forEach(s=>{
     const m=s.date.slice(0,7);
@@ -1244,9 +1398,13 @@ function renderManage(){
   if(activities.length===0){ml.innerHTML='<div class="empty-state"><div class="empty-text">No activities yet.</div></div>';return;}
   ml.innerHTML=activities.map((a,i)=>{
     const color=COLORS.find(c=>c.id===a.color_id)||COLORS[0];
+    const limitLabel=a.weekly_limit_minutes?`<span style="font-size:10px;color:var(--rose);margin-left:4px;opacity:0.7;">⬡ ${fmtMins(a.weekly_limit_minutes*60)}/wk</span>`:'';
     return`<div class="manage-item">
       <div class="manage-emoji">${a.emoji}</div>
-      <div class="manage-name">${a.name}</div>
+      <div style="flex:1;min-width:0;">
+        <div class="manage-name">${a.name}</div>
+        ${limitLabel}
+      </div>
       <div style="width:10px;height:10px;border-radius:50%;background:${color.dot};margin-right:4px;flex-shrink:0"></div>
       <div class="manage-actions">
         ${i>0?`<button class="manage-btn" onclick="moveActivity(${i},-1)">↑</button>`:'<div style="width:30px"></div>'}
@@ -1291,7 +1449,7 @@ async function moveActivity(index,dir){
   await Promise.all(activities.map(a=>sb.from('activities').update({sort_order:a.sort_order}).eq('id',a.id).eq('user_id',currentUserId)));
 }
 
-// ── EDIT MODAL ────────────────────────────────────────────────────────────────
+// ── EDIT MODAL (session) ──────────────────────────────────────────────────────
 function openEditModal(sessionId){
   const s=allSessions.find(x=>x.id===sessionId);if(!s)return;
   const act=activities.find(a=>a.id===s.activity_id);if(!act)return;
@@ -1301,7 +1459,6 @@ function openEditModal(sessionId){
   document.getElementById('edit-modal-meta').textContent=dt.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})+' · '+fmtMins(s.duration);
   document.getElementById('edit-enough-btn').textContent=_editEnough?'Enough ✓':'Not enough';
   document.getElementById('edit-enough-btn').className='toggle-btn'+(_editEnough?' on':'');
-  // Populate duration fields
   const durH=Math.floor(_editDuration/3600);
   const durM=Math.floor((_editDuration%3600)/60);
   document.getElementById('edit-duration-hrs').value=durH;
@@ -1426,10 +1583,38 @@ function selectEditNudge(mins){
   });
 }
 
+// ── WEEKLY LIMIT PICKER ───────────────────────────────────────────────────────
+function selectEditLimit(limitMins){
+  if(limitMins===-1){
+    // Custom — show custom inputs
+    _editActLimitMins=-1; // sentinel: custom
+    document.querySelectorAll('#edit-limit-picker .nudge-opt').forEach(b=>{
+      b.classList.toggle('active',parseInt(b.dataset.limit)===-1);
+    });
+    document.getElementById('edit-limit-custom-wrap').style.display='block';
+    return;
+  }
+  _editActLimitMins=limitMins;
+  document.querySelectorAll('#edit-limit-picker .nudge-opt').forEach(b=>{
+    b.classList.toggle('active',parseInt(b.dataset.limit)===limitMins);
+  });
+  document.getElementById('edit-limit-custom-wrap').style.display='none';
+}
+
+function resolveEditLimitMins(){
+  if(_editActLimitMins===-1){
+    const h=parseInt(document.getElementById('edit-limit-custom-hrs').value)||0;
+    const m=parseInt(document.getElementById('edit-limit-custom-mins').value)||0;
+    return h*60+m;
+  }
+  return _editActLimitMins;
+}
+
 // ── EDIT ACTIVITY ─────────────────────────────────────────────────────────────
 function openEditActivity(id){
   const act=activities.find(a=>a.id===id);if(!act)return;
   _editActId=id;_editActColorId=act.color_id||'purple';_editActNudgeMins=act.nudge_minutes||30;
+  _editActLimitMins=act.weekly_limit_minutes||0;
   document.getElementById('edit-act-name').value=act.name;
   document.getElementById('edit-act-emoji').value=act.emoji;
   document.getElementById('edit-act-emoji-btn').textContent=act.emoji;
@@ -1439,6 +1624,22 @@ function openEditActivity(id){
   document.querySelectorAll('#edit-nudge-picker .nudge-opt').forEach(b=>{
     b.classList.toggle('active',parseInt(b.dataset.mins)===_editActNudgeMins);
   });
+  // Set limit picker state
+  const presets=[0,60,120,180,300,420,600];
+  const isCustom=_editActLimitMins>0&&!presets.includes(_editActLimitMins);
+  document.querySelectorAll('#edit-limit-picker .nudge-opt').forEach(b=>{
+    const bval=parseInt(b.dataset.limit);
+    b.classList.toggle('active', isCustom ? bval===-1 : bval===_editActLimitMins);
+  });
+  const customWrap=document.getElementById('edit-limit-custom-wrap');
+  if(isCustom){
+    customWrap.style.display='block';
+    document.getElementById('edit-limit-custom-hrs').value=Math.floor(_editActLimitMins/60);
+    document.getElementById('edit-limit-custom-mins').value=_editActLimitMins%60;
+    _editActLimitMins=-1; // mark as custom
+  } else {
+    customWrap.style.display='none';
+  }
   _editActReminderTime=act.reminder_time||null;
   _editActReminderFreq=act.reminder_freq||0;
   document.getElementById('edit-reminder-time').value=_editActReminderTime||'';
@@ -1474,10 +1675,18 @@ async function saveEditActivity(){
   if(!name){showToast('Please enter a name');return;}
   const timeVal=document.getElementById('edit-reminder-time').value||null;
   _editActReminderTime=timeVal;
-  const{error}=await sb.from('activities').update({name,emoji,color_id:_editActColorId,nudge_minutes:_editActNudgeMins,reminder_time:_editActReminderTime,reminder_freq:_editActReminderFreq||null}).eq('id',_editActId).eq('user_id',currentUserId);
+  const resolvedLimit=resolveEditLimitMins();
+  const weeklyLimit=resolvedLimit>0?resolvedLimit:null;
+  const{error}=await sb.from('activities').update({
+    name,emoji,color_id:_editActColorId,
+    nudge_minutes:_editActNudgeMins,
+    reminder_time:_editActReminderTime,
+    reminder_freq:_editActReminderFreq||null,
+    weekly_limit_minutes:weeklyLimit,
+  }).eq('id',_editActId).eq('user_id',currentUserId);
   if(!error){
     const idx=activities.findIndex(a=>a.id===_editActId);
-    if(idx>-1){activities[idx]={...activities[idx],name,emoji,color_id:_editActColorId,nudge_minutes:_editActNudgeMins,reminder_time:_editActReminderTime,reminder_freq:_editActReminderFreq||null};}
+    if(idx>-1){activities[idx]={...activities[idx],name,emoji,color_id:_editActColorId,nudge_minutes:_editActNudgeMins,reminder_time:_editActReminderTime,reminder_freq:_editActReminderFreq||null,weekly_limit_minutes:weeklyLimit};}
     document.getElementById('edit-activity-modal').style.display='none';
     renderManage();renderToday();showToast('Activity updated');
   } else showToast('Error saving — check your connection');
@@ -1520,20 +1729,13 @@ async function loadContent(){
   try{
     const{data,error}=await sb.from('site_content').select('data').eq('id',1).single();
     if(!error&&data&&data.data){
-      // Deep merge with defaults so missing keys fall back gracefully
       siteContent.welcome={...DEFAULT_CONTENT.welcome,...data.data.welcome};
       siteContent.welcome.pillars=data.data.welcome?.pillars||DEFAULT_CONTENT.welcome.pillars;
       siteContent.about={...DEFAULT_CONTENT.about,...data.data.about};
       siteContent.about.pillars=data.data.about?.pillars||DEFAULT_CONTENT.about.pillars;
     }
-  }catch(e){/* use defaults */}
+  }catch(e){}
 }
-
-// ── WELCOME OVERLAY ───────────────────────────────────────────────────────────
-// removed
-
-// ── TRA ABOUT SECTION ─────────────────────────────────────────────────────────
-// removed
 
 // ── ADMIN ─────────────────────────────────────────────────────────────────────
 function renderAdminEditor(){
@@ -1599,13 +1801,11 @@ async function saveAdminContent(){
     }
   };
   try{
-    // Try update first, then insert if no row
     const{error:upErr}=await sb.from('site_content').update({data:newContent,updated_at:new Date().toISOString()}).eq('id',1);
     if(upErr){
       await sb.from('site_content').insert({id:1,data:newContent});
     }
     siteContent=newContent;
-    renderAboutTRA();
     btn.textContent='Published ✓';
     setTimeout(()=>{btn.textContent='Save & publish';btn.disabled=false;},2500);
   }catch(e){
@@ -1620,8 +1820,6 @@ function resetWelcomeSeen(){
 }
 
 function checkAdminAccess(passphrase){
-  // Strip non-digits and check if it matches the PIN embedded in passphrase login
-  // Admin is unlocked if the user's passphrase is the admin PIN
   if(passphrase===ADMIN_PIN){
     document.getElementById('nav-admin').style.display='';
   }
@@ -1698,7 +1896,6 @@ function regenPassphrase(){
 
 function copyPassphrase(){
   navigator.clipboard.writeText(_regPassphrase).then(()=>showToast('Passphrase copied!')).catch(()=>{
-    // fallback for older iOS
     showToast(_regPassphrase);
   });
 }
@@ -1707,10 +1904,8 @@ async function createAccount(){
   const btn=document.getElementById('reg-create-btn');
   const err=document.getElementById('reg-error');
   btn.disabled=true;btn.textContent='Creating…';err.textContent='';
-  // Generate unique user_id from name + timestamp
   const userId='user_'+_regName.toLowerCase().replace(/[^a-z0-9]/g,'')+'_'+Date.now().toString(36);
   try{
-    // Check for passphrase collision and regenerate if needed
     let passphrase=_regPassphrase;
     let attempts=0;
     while(attempts<5){
@@ -1723,7 +1918,6 @@ async function createAccount(){
     document.getElementById('reg-passphrase-display').textContent=passphrase;
     const{error}=await sb.from('user_accounts').insert({passphrase,user_id:userId,display_name:_regName});
     if(error){err.textContent='Something went wrong — please try again.';btn.disabled=false;btn.textContent='Create my account 🌿';return;}
-    // Sign in immediately
     localStorage.setItem('findEnough_passphrase',passphrase);
     localStorage.setItem('findEnough_userId',userId);
     currentUserId=userId;currentPassphrase=passphrase;
