@@ -673,7 +673,7 @@
         <button class="nudge-opt" data-limit="600" onclick="selectEditLimit(600)">10h</button>
         <button class="nudge-opt" data-limit="-1" onclick="selectEditLimit(-1)">Custom</button>
       </div>
-      <div id="edit-limit-custom-wrap" style="display:none;margin-top:8px;display:none;">
+      <div id="edit-limit-custom-wrap" style="display:none;margin-top:8px;">
         <div style="display:flex;align-items:center;gap:8px;">
           <input type="number" id="edit-limit-custom-hrs" min="0" max="99" placeholder="0" style="width:60px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px;font-size:14px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;text-align:center;">
           <span style="font-size:13px;color:var(--text3)">h</span>
@@ -1678,19 +1678,25 @@ async function saveEditActivity(){
   _editActReminderTime=timeVal;
   const resolvedLimit=resolveEditLimitMins();
   const weeklyLimit=resolvedLimit>0?resolvedLimit:null;
-  const{error}=await sb.from('activities').update({
-    name,emoji,color_id:_editActColorId,
-    nudge_minutes:_editActNudgeMins,
-    reminder_time:_editActReminderTime,
-    reminder_freq:_editActReminderFreq||null,
-    weekly_limit_minutes:weeklyLimit,
-  }).eq('id',_editActId).eq('user_id',currentUserId);
+  // Try saving with weekly_limit_minutes; fall back without it if column doesn't exist yet
+  let updatePayload={name,emoji,color_id:_editActColorId,nudge_minutes:_editActNudgeMins,reminder_time:_editActReminderTime,reminder_freq:_editActReminderFreq||null,weekly_limit_minutes:weeklyLimit};
+  let{error}=await sb.from('activities').update(updatePayload).eq('id',_editActId).eq('user_id',currentUserId);
+  if(error&&error.message&&error.message.includes('weekly_limit_minutes')){
+    // Column not yet migrated — save without it
+    const{weekly_limit_minutes:_dropped,...payloadWithout}=updatePayload;
+    const res2=await sb.from('activities').update(payloadWithout).eq('id',_editActId).eq('user_id',currentUserId);
+    error=res2.error;
+    if(!error) showToast('Saved (run the Supabase migration to enable weekly limits)');
+  }
   if(!error){
     const idx=activities.findIndex(a=>a.id===_editActId);
     if(idx>-1){activities[idx]={...activities[idx],name,emoji,color_id:_editActColorId,nudge_minutes:_editActNudgeMins,reminder_time:_editActReminderTime,reminder_freq:_editActReminderFreq||null,weekly_limit_minutes:weeklyLimit};}
     document.getElementById('edit-activity-modal').style.display='none';
     renderManage();renderToday();showToast('Activity updated');
-  } else showToast('Error saving — check your connection');
+  } else {
+    console.error('saveEditActivity error:', error);
+    showToast('Error saving — check your connection');
+  }
 }
 
 // ── CONTENT SYSTEM ────────────────────────────────────────────────────────────
