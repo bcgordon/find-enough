@@ -648,9 +648,15 @@
       <input type="hidden" id="edit-act-emoji" value="">
       <input class="form-input" id="edit-act-name" placeholder="Activity name" maxlength="30">
     </div>
-    <div class="color-row" id="edit-act-color-picker" style="margin-bottom:10px;"></div>
-    <div style="margin-bottom:16px;">
-      <div style="font-size:12px;color:var(--text3);margin-bottom:6px;">Nudge me after</div>
+    <div class="color-row" id="edit-act-color-picker" style="margin-bottom:16px;"></div>
+
+    <!-- ── NUDGE ── -->
+    <div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border);">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
+        <div style="font-size:12px;font-weight:500;color:var(--text2);">⏱ Session nudge</div>
+        <span style="font-size:11px;color:var(--text3);font-style:italic;">(optional)</span>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:8px;line-height:1.5;">While a session is running, you'll get a mood check-in after this long. A gentle prompt to notice how you're feeling — not a stop sign.</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;" id="edit-nudge-picker">
         <button class="nudge-opt" data-mins="15" onclick="selectEditNudge(15)">15 min</button>
         <button class="nudge-opt" data-mins="30" onclick="selectEditNudge(30)">30 min</button>
@@ -659,10 +665,14 @@
         <button class="nudge-opt" data-mins="90" onclick="selectEditNudge(90)">90 min</button>
       </div>
     </div>
+
     <!-- ── WEEKLY LIMIT ── -->
-    <div style="margin-bottom:16px;">
-      <div style="font-size:12px;color:var(--text3);margin-bottom:2px;">Weekly time limit <span style="font-style:italic;opacity:0.7">(optional)</span></div>
-      <div style="font-size:11px;color:var(--text3);margin-bottom:8px;line-height:1.5;">Set a gentle ceiling for the week. You'll see a visual gauge as you approach it — nothing will stop you from going over.</div>
+    <div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border);">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
+        <div style="font-size:12px;font-weight:500;color:var(--text2);">⬡ Weekly time limit</div>
+        <span style="font-size:11px;color:var(--text3);font-style:italic;">(optional)</span>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:8px;line-height:1.5;">A soft ceiling on how much time you spend on this activity each week. You'll see a gauge on the Today screen and during sessions as you approach it — going over is always allowed, just visible.</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;" id="edit-limit-picker">
         <button class="nudge-opt" data-limit="0" onclick="selectEditLimit(0)">None</button>
         <button class="nudge-opt" data-limit="60" onclick="selectEditLimit(60)">1h</button>
@@ -681,18 +691,33 @@
           <span style="font-size:13px;color:var(--text3)">min</span>
         </div>
       </div>
+      <div style="display:flex;align-items:center;gap:6px;margin-top:8px;background:var(--bg2);border-radius:8px;padding:8px 10px;">
+        <span style="font-size:13px;">🗓</span>
+        <span style="font-size:11px;color:var(--text2);line-height:1.4;">Resets every <strong>Monday at midnight</strong>. Any time tracked Mon–Sun counts toward that week's limit.</span>
+      </div>
     </div>
     <!-- ── END WEEKLY LIMIT ── -->
-    <div style="margin-bottom:16px;">
-      <div style="font-size:12px;color:var(--text3);margin-bottom:6px;">Daily reminder time <span style="font-style:italic;opacity:0.7">(optional)</span></div>
+
+    <!-- ── DAILY REMINDER ── -->
+    <div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border);">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
+        <div style="font-size:12px;font-weight:500;color:var(--text2);">🔔 Daily reminder</div>
+        <span style="font-size:11px;color:var(--text3);font-style:italic;">(optional)</span>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:8px;line-height:1.5;">Set a time of day. If you open the app after this time and haven't logged any time on this activity yet, a nudge card will appear on your Today screen.</div>
       <div style="display:flex;align-items:center;gap:10px;">
         <input type="time" class="form-input" id="edit-reminder-time" style="flex:1;max-width:140px;">
         <button onclick="clearReminderTime()" style="font-size:12px;color:var(--text3);background:none;border:none;cursor:pointer;padding:4px;">Clear</button>
       </div>
-      <div style="font-size:11px;color:var(--text3);margin-top:4px;line-height:1.5;">When you open the app after this time and haven't done this activity yet, you'll see a gentle nudge.</div>
     </div>
+
+    <!-- ── WEEKLY FREQUENCY ── -->
     <div style="margin-bottom:16px;">
-      <div style="font-size:12px;color:var(--text3);margin-bottom:6px;">Weekly frequency goal <span style="font-style:italic;opacity:0.7">(optional)</span></div>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
+        <div style="font-size:12px;font-weight:500;color:var(--text2);">📅 Weekly frequency goal</div>
+        <span style="font-size:11px;color:var(--text3);font-style:italic;">(optional)</span>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:8px;line-height:1.5;">How many days per week do you want to do this? If you're falling behind and won't make it in time, a nudge will appear on your Today screen.</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;" id="edit-freq-picker">
         <button class="nudge-opt" data-freq="0" onclick="selectEditFreq(0)">None</button>
         <button class="nudge-opt" data-freq="1" onclick="selectEditFreq(1)">1×</button>
@@ -702,8 +727,12 @@
         <button class="nudge-opt" data-freq="5" onclick="selectEditFreq(5)">5×</button>
         <button class="nudge-opt" data-freq="7" onclick="selectEditFreq(7)">Daily</button>
       </div>
-      <div style="font-size:11px;color:var(--text3);margin-top:4px;line-height:1.5;">If you're falling behind on this goal, a nudge will appear on your Today screen.</div>
+      <div style="display:flex;align-items:center;gap:6px;margin-top:8px;background:var(--bg2);border-radius:8px;padding:8px 10px;">
+        <span style="font-size:13px;">🗓</span>
+        <span style="font-size:11px;color:var(--text2);line-height:1.4;">Also resets every <strong>Monday</strong>. Each day you log any time counts as one occurrence.</span>
+      </div>
     </div>
+
     <button class="modal-close" onclick="saveEditActivity()">Save changes</button>
   </div>
 </div>
@@ -842,11 +871,14 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
 function weekStartStr(){
   const now=new Date();
   const d=new Date(now);
-  d.setDate(now.getDate()-now.getDay());
+  // Week starts Monday: getDay() is 0=Sun,1=Mon...6=Sat
+  const day=now.getDay();
+  const diffToMonday=day===0?-6:1-day; // Sunday goes back 6, others go back to Monday
+  d.setDate(now.getDate()+diffToMonday);
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 
-// Returns all date strings for the current week (Sun-Sat)
+// Returns all date strings for the current week (Mon-Sun)
 function currentWeekDays(){
   const start=new Date(weekStartStr());
   return Array.from({length:7},(_,i)=>{
@@ -1038,8 +1070,12 @@ async function renderToday(){
   const now=new Date();
   const currentTime=now.getHours()*60+now.getMinutes();
   const dayOfWeek=now.getDay();
-  const weekStart=new Date(now);weekStart.setDate(now.getDate()-dayOfWeek);
+  // Week starts Monday
+  const diffToMonday=dayOfWeek===0?-6:1-dayOfWeek;
+  const weekStart=new Date(now);weekStart.setDate(now.getDate()+diffToMonday);
   const weekDays=Array.from({length:7},(_,i)=>{const d=new Date(weekStart);d.setDate(weekStart.getDate()+i);return d.toISOString().slice(0,10);});
+  // Days remaining in week (Sun=0 days left since week ends Sun, Mon=6, ...Sat=1)
+  const daysLeftInWeek=dayOfWeek===0?0:7-dayOfWeek;
   const reminders=[];
   activities.forEach(a=>{
     if(a.reminder_time){
@@ -1052,7 +1088,7 @@ async function renderToday(){
     }
     if(a.reminder_freq&&a.reminder_freq>0){
       const doneThisWeek=new Set(allSessions.filter(s=>s.activity_id===a.id&&weekDays.includes(s.date)).map(s=>s.date)).size;
-      const daysLeft=6-dayOfWeek;
+      const daysLeft=daysLeftInWeek;
       const needed=a.reminder_freq-doneThisWeek;
       if(needed>0&&needed>daysLeft){
         reminders.push({activity:a,type:'freq',msg:`Goal: ${a.reminder_freq}× this week. Done ${doneThisWeek} so far — ${needed} more to go.`});
